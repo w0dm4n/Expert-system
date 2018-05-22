@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+const (
+	EOF_TYPE   = "EOF"
+	ERROR_TYPE = "error"
+)
+
 func errorChecker(err *error) {
 	if *err != nil {
 		panic(*err)
@@ -18,23 +23,30 @@ func main() {
 		recover := recover()
 		if recover != nil {
 			err := recover.(error)
-			if err != nil {
+			if err != nil && typeOf(err) == ERROR_TYPE {
 				fmt.Println("An error occured while trying to load datas:", err.Error())
 			}
 		}
 	}()
+	var parser Parser
 
+	parser.graph.build()
 	switch lenArgs := len(os.Args); lenArgs {
 	case 1:
 		fmt.Println("Please enter content and press CTRL-D")
 		reader := bufio.NewReader(os.Stdin)
 		data, err := reader.ReadString(0)
-		errorChecker(&err)
-		parseContent(string(data))
+		if err != nil {
+			if err.Error() == EOF_TYPE {
+				parser.parseContent([]byte(data))
+			} else {
+				panic(err)
+			}
+		}
 	case 2:
 		data, err := ioutil.ReadFile(os.Args[1])
 		errorChecker(&err)
-		parseContent(string(data))
+		parser.parseContent(data)
 	default:
 		panic("Please give me a file or some entries in stdin :(")
 	}

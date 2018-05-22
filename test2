@@ -1,0 +1,6 @@
+C | !X + (B | D) => E # C implies E
+#C => F
+#C + E <=> Z
+# Hello
+=CD
+?E
