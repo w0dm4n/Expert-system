@@ -86,6 +86,18 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	fmt.Printf("Conditional: %s, Operator: %s, Affected: %s\n", conditional, operator.Value, affected)
 }
 
+func (parser *Parser) getQueryResult(content string, l int) {
+	operands := []byte(strings.Trim(content, " "))
+	for _, elem := range operands {
+		operand := parser.graph.getOperand(rune(elem))
+		if operand != nil {
+			fmt.Printf("%s is %t\n", string(operand.Value), operand.Active)
+		} else {
+			panic(fmt.Sprintf("%s %d: %s (%s)", "Bad syntax on line", l, "Invalid operand on query (do not exist or not used)", string(operand.Value)))
+		}
+	}
+}
+
 func (parser *Parser) parseContent(bytes []byte) {
 
 	defer func() {
@@ -113,7 +125,9 @@ func (parser *Parser) parseContent(bytes []byte) {
 			} else if strings.Index(elem, INITIAL_FACTS) != -1 && strings.Index(elem, INITIAL_FACTS) == 0 {
 				parser.activeOperands(elem[1:len(elem)], l)
 			} else if strings.Index(elem, INITIAL_QUERIES) != -1 && strings.Index(elem, INITIAL_QUERIES) == 0 {
-				//fmt.Printf("Queries found: %s\n", elem)
+
+				// execute operations here
+				parser.getQueryResult(elem[1:len(elem)], l)
 			} else {
 				panic(fmt.Sprintf("%s %d: %s", "Bad syntax on line", l, "No operator found"))
 			}

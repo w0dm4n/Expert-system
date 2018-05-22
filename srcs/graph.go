@@ -42,3 +42,12 @@ func (graph *Graph) activeOperand(operand rune) {
 		}
 	}
 }
+
+func (graph *Graph) getOperand(operand rune) *Operand {
+	for _, elem := range graph.Operands {
+		if elem.Value == operand {
+			return &elem
+		}
+	}
+	return nil
+}
