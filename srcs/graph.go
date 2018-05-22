@@ -8,6 +8,7 @@ type Operand struct {
 type Symbol struct {
 	Value            string
 	OperandsAffected []Operand
+	inParenthesis    bool
 }
 
 type Graph struct {

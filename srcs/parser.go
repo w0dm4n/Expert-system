@@ -82,7 +82,78 @@ func (parser *Parser) activeOperands(content string, l int) {
 	}
 }
 
+func (parser *Parser) getSymbol(content string) *BaseSymbol {
+	for _, elem := range parser.graph.Symbols {
+		if elem.Value == content {
+			return &elem
+		}
+	}
+	return nil
+}
+
+func (parser *Parser) getOperand(content string) *Operand {
+	operandValue := []rune(parser.trimOperand(content))[0]
+	if operandValue >= 'A' && operandValue <= 'Z' {
+		operand := Operand{operandValue, true}
+		if strings.Contains(content, NEGATIVE_OPERATOR) {
+			operand.Active = false
+		}
+		return &operand
+	}
+	return nil
+}
+
+func (parser *Parser) getOperandConcerned(operands []Operand, content []string, i int) []Operand {
+	var concerned []Operand
+	concerned = append(concerned, operands[i-1])
+	concerned = append(concerned, operands[i])
+	return concerned
+}
+
 func (parser *Parser) newOperation(conditional, affected string, operator *BaseOperator) {
+
+	conditionalContent := strings.Split(conditional, " ")
+	var operands []Operand
+	var symbols []Symbol
+	var inParenthesis = false
+
+	_ = inParenthesis
+	for _, elem := range conditionalContent {
+
+		operand := parser.getOperand(elem)
+		if operand != nil {
+			operands = append(operands, *operand)
+		}
+	}
+
+	symbolCount := 0
+	for _, elem := range conditionalContent {
+		if strings.Contains(elem, PARENTHESIS_START) {
+			inParenthesis = true
+		}
+		symbolBase := parser.getSymbol(elem)
+		if symbolBase != nil {
+			symbolCount++ // until next symbol
+			symbol := Symbol{symbolBase.Value, parser.getOperandConcerned(operands, conditionalContent, symbolCount), inParenthesis}
+			symbols = append(symbols, symbol)
+		}
+		if strings.Contains(elem, PARENTHESIS_END) {
+			inParenthesis = false
+		}
+	}
+
+	// C | !X + (B + X | (F | !X))
+	for _, elem := range symbols {
+		fmt.Printf("%s (%t) %s %s (%t) (Parenthese %t)\n", string(elem.OperandsAffected[0].Value), elem.OperandsAffected[0].Active, elem.Value, string(elem.OperandsAffected[1].Value), elem.OperandsAffected[1].Active, elem.inParenthesis)
+	}
+
+	// fmt.Println(symbols, "\n", operands)
+	// for _, elem := range operands {
+	// 	fmt.Printf("%s %t\n", string(elem.Value), elem.Active)
+	// }
+
+	// parenthesis := strings.Split(conditional, PARENTHESIS_START)
+	// fmt.Println(parenthesis)
 	fmt.Printf("Conditional: %s, Operator: %s, Affected: %s\n", conditional, operator.Value, affected)
 }
 
