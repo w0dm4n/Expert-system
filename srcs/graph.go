@@ -11,7 +11,54 @@ type Symbol struct {
 	inParenthesis    bool
 }
 
+type Node interface {
+	getParentNodes() []Node
+	apply() bool
+}
+
+type Rule struct {
+	Type        string
+	parentNodes []Node
+}
+
+func (rule *Rule) getParentNodes() []Node {
+	return rule.parentNodes
+}
+
+func (rule *Rule) apply() bool {
+	potentialsValues := make([]bool, len(rule.getParentNodes()))
+	for i, v := range rule.parentNodes {
+		potentialsValues[i] = v.apply()
+	}
+	// need to return a definitive value or undetermined here
+	return potentialsValues[0]
+}
+
+type Fact struct {
+	Name         string
+	initialValue bool
+	parentNodes  []Node
+}
+
+func (fact *Fact) getParentNodes() []Node {
+	return fact.parentNodes
+}
+
+func (fact *Fact) apply() bool {
+	if len(fact.parentNodes) == 0 {
+		return fact.initialValue
+	} else {
+		potentialsValues := make([]bool, len(fact.parentNodes))
+		for i, v := range fact.parentNodes {
+			potentialsValues[i] = v.apply()
+		}
+		// need to return a definitive value or undetermined here
+		return potentialsValues[0]
+	}
+}
+
 type Graph struct {
+	Facts     map[string]Fact
 	Operands  []Operand
 	Operators [2]BaseOperator
 	Symbols   [3]BaseSymbol
