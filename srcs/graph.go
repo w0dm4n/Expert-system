@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Operand struct {
 	Value  rune
 	Active bool
@@ -11,17 +13,17 @@ type Symbol struct {
 	inParenthesis    bool
 }
 
-type Node interface {
-	getParentNodes() []Node
+type Noder interface {
+	getParentNodes() []Noder
 	apply() bool
 }
 
 type Rule struct {
 	Type        string
-	parentNodes []Node
+	parentNodes []Noder
 }
 
-func (rule *Rule) getParentNodes() []Node {
+func (rule *Rule) getParentNodes() []Noder {
 	return rule.parentNodes
 }
 
@@ -37,10 +39,10 @@ func (rule *Rule) apply() bool {
 type Fact struct {
 	Name         string
 	initialValue bool
-	parentNodes  []Node
+	parentNodes  []Noder
 }
 
-func (fact *Fact) getParentNodes() []Node {
+func (fact *Fact) getParentNodes() []Noder {
 	return fact.parentNodes
 }
 
@@ -62,6 +64,14 @@ type Graph struct {
 	Operands  []Operand
 	Operators [2]BaseOperator
 	Symbols   [3]BaseSymbol
+}
+
+func (graph *Graph) printConnections() {
+	fmt.Printf("%+v", graph.Facts)
+}
+
+func (graph *Graph) print() {
+	fmt.Printf("%+v", graph)
 }
 
 func (graph *Graph) addOperand(operand rune) {

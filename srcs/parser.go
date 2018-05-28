@@ -155,6 +155,144 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	// parenthesis := strings.Split(conditional, PARENTHESIS_START)
 	// fmt.Println(parenthesis)
 	fmt.Printf("Conditional: %s, Operator: %s, Affected: %s\n", conditional, operator.Value, affected)
+
+	// rule creation into graph
+
+	// transform conditional into a tree
+	// starting node is always the operator
+	Rule := &Rule{Type: operator.Value}
+
+	_ = Rule
+
+	rawNodes, _ := arrangeOperations(conditional)
+	_ = rawNodes
+}
+
+type Node struct {
+	Value  rune
+	Parent *Node
+	Left   *Node
+	Right  *Node
+}
+
+func (node *Node) print(level int) {
+	if node.Right != nil {
+		node.Right.print(level + 1)
+	}
+	for i := 0; i < level; i++ {
+		fmt.Printf(" ")
+	}
+	println(string(node.Value))
+	if node.Left != nil {
+		node.Left.print(level + 1)
+	}
+}
+
+var prios = map[rune]int{'(': 1, ')': 2, '!': 3, '+': 4, '|': 5, '^': 6}
+
+func (node *Node) insert(currentNode *Node, value rune) (root *Node, inserted *Node) {
+	// in case we come from root brackets (i.e. prev was set to null to force absolute priority)
+	if currentNode == nil {
+		currentNode = &Node{Value: value, Left: node}
+		node.Parent = currentNode
+		inserted = currentNode
+		root = inserted
+		return
+	}
+
+	root = node
+	if prios[value] < prios[currentNode.Value] {
+		if currentNode.Left == nil {
+			currentNode.Left = &Node{Value: value, Parent: currentNode}
+			inserted = currentNode.Left
+		} else if currentNode.Right == nil {
+			currentNode.Right = &Node{Value: value, Parent: currentNode}
+			inserted = currentNode.Right
+		} else {
+			intermediateNode := &Node{Value: value, Parent: currentNode, Left: currentNode.Right}
+			currentNode.Right.Parent = intermediateNode
+			currentNode.Right = intermediateNode
+			inserted = intermediateNode
+		}
+	} else {
+		if currentNode.Parent != nil {
+			root, inserted = node.insert(currentNode.Parent, value)
+		} else {
+			currentNode.Parent = &Node{Value: value, Left: currentNode}
+			inserted = currentNode.Parent
+			root = inserted
+		}
+	}
+
+	return
+}
+
+func (node *Node) insertNode(currentNode *Node, incomingNode *Node) (root *Node, inserted *Node) {
+	root = node
+	if currentNode.Left == nil {
+		currentNode.Left = incomingNode
+		incomingNode.Parent = currentNode
+		inserted = currentNode.Left
+	} else if currentNode.Right == nil {
+		currentNode.Right = incomingNode
+		incomingNode.Parent = currentNode
+		inserted = currentNode.Right
+	}
+
+	return
+}
+
+func arrangeOperations(operations string) (res *Node, length int) {
+
+	var root *Node
+	prev := root
+	skip := 0
+
+	for pos, char := range []rune(operations) {
+		if char == ' ' {
+			continue
+		}
+		if skip > 0 {
+			skip--
+			continue
+		}
+		fmt.Printf("character %c starts at byte position %d\n", char, pos)
+
+		switch char {
+		case '(':
+			fmt.Println("opening bracket")
+			innerOps, length := arrangeOperations(operations[pos+1:])
+			skip = length - 1
+
+			fmt.Println("got back from resursive with")
+			innerOps.print(0)
+			fmt.Println("length was", skip)
+
+			if root == nil {
+				root = innerOps
+				prev = root
+			} else {
+				root, prev = root.insertNode(prev, innerOps)
+			}
+			prev = prev.Parent
+		case ')':
+			fmt.Println("closing bracket at", pos)
+			return root, pos
+		default:
+			if root == nil {
+				root = &Node{Value: char}
+				prev = root
+			} else {
+				root, prev = root.insert(prev, char)
+			}
+		}
+		fmt.Println("current tree")
+		root.print(0)
+		length++
+	}
+
+	res = root
+	return res, length
 }
 
 func (parser *Parser) getQueryResult(content string, l int) {
@@ -205,4 +343,6 @@ func (parser *Parser) parseContent(bytes []byte) {
 		}
 		l++
 	}
+
+	parser.graph.printConnections()
 }
