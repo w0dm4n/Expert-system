@@ -130,6 +130,7 @@ func (graph *Graph) integrateNode(node *Node, noder Noder, isParent bool) {
 // we return a new node which can be a new fact or just a rule
 func (graph *Graph) toNoder(node *Node) (noder Noder) {
 	if item, ok := graph.Facts[string(node.Value)]; ok {
+		println("got existing fact")
 		return item
 	} else {
 		if node.Value == '!' ||
