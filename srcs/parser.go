@@ -172,6 +172,7 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	// conversion of binary tree nodes into graph nodes
 	// the graph has to know on which side it is from the operator
 	parser.graph.integrate(lhsRawNodes, operator, rhsRawNodes)
+	println("E is", parser.graph.Facts["E"].parentNodes)
 }
 
 type Node struct {
@@ -307,6 +308,12 @@ func (parser *Parser) getQueryResult(content string, l int) {
 		operand := parser.graph.getOperand(rune(elem))
 		if operand != nil {
 			fmt.Printf("%s is %t\n", string(operand.Value), operand.Active)
+			if fact, ok := parser.graph.Facts[string(elem)]; ok {
+				fmt.Println("inferring value of", fact)
+				fact.printRules()
+			} else {
+				fmt.Println("no fact registered for", string(elem))
+			}
 		} else {
 			panic(fmt.Sprintf("%s %d: %s (%s)", "Bad syntax on line", l, "Invalid operand on query (do not exist or not used)", string(operand.Value)))
 		}

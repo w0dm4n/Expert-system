@@ -68,6 +68,13 @@ func (fact *Fact) apply() bool {
 	}
 }
 
+func (fact *Fact) printRules() {
+	for parent := range fact.parentNodes {
+		println(parent)
+	}
+	println(len(fact.parentNodes))
+}
+
 type Graph struct {
 	Facts     map[string]*Fact
 	Operands  []Operand
@@ -89,15 +96,19 @@ func (graph *Graph) integrate(lhsNode *Node, op *BaseOperator, rhsNode *Node) {
 	invertLinked := graph.toNoder(rhsNode)
 	println("linking")
 	if rootRule.Type == "=>" {
-		rootRule.parentNodes = append(rootRule.parentNodes, linked)
+		rootRule.setParentNode(linked)
+		invertLinked.setParentNode(rootRule)
 		graph.integrateNode(lhsNode, linked, true)
 		graph.integrateNode(rhsNode, invertLinked, false)
 	}
 	if rootRule.Type == "<=>" {
-		rootRule.parentNodes = append(rootRule.parentNodes, invertLinked)
+		rootRule.setParentNode(invertLinked)
+		linked.setParentNode(rootRule)
 		graph.integrateNode(rhsNode, invertLinked, true)
 		graph.integrateNode(lhsNode, linked, false)
 	}
+	println(linked.getParentNodes())
+	println(invertLinked.getParentNodes())
 }
 
 // Integrate the current node and the left and right of the node
@@ -120,7 +131,11 @@ func (graph *Graph) integrateNode(node *Node, noder Noder, isParent bool) {
 		}{node.Right, graph.toNoder(node.Right)})
 	}
 	for _, linked := range linkeds {
-		noder.setParentNode(linked.Noder)
+		if isParent {
+			noder.setParentNode(linked.Noder)
+		} else {
+			linked.Noder.setParentNode(noder)
+		}
 		graph.integrateNode(linked.Node, linked.Noder, isParent)
 	}
 }
@@ -142,7 +157,7 @@ func (graph *Graph) toNoder(node *Node) (noder Noder) {
 			return &Rule{Type: string(node.Value)}
 		} else {
 			// got fact
-			println("got fact")
+			println("got new fact", string(node.Value))
 			graph.Facts[string(node.Value)] = &Fact{Name: string(node.Value)}
 			return graph.Facts[string(node.Value)]
 		}
