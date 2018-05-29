@@ -164,8 +164,14 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 
 	_ = Rule
 
-	rawNodes, _ := arrangeOperations(conditional)
-	_ = rawNodes
+	lhsRawNodes, _ := arrangeOperations(conditional)
+	rhsRawNodes, _ := arrangeOperations(affected)
+	_ = lhsRawNodes
+	_ = rhsRawNodes
+
+	// conversion of binary tree nodes into graph nodes
+	// the graph has to know on which side it is from the operator
+	parser.graph.integrate(lhsRawNodes, operator, rhsRawNodes)
 }
 
 type Node struct {
@@ -188,7 +194,7 @@ func (node *Node) print(level int) {
 	}
 }
 
-var prios = map[rune]int{'(': 1, ')': 2, '!': 3, '+': 4, '|': 5, '^': 6}
+var prios = map[rune]int{'(': 1, ')': 2, '!': 3, ([]rune(SYMBOL_AND))[0]: 4, ([]rune(SYMBOL_OR))[0]: 5, ([]rune(SYMBOL_XOR))[0]: 6}
 
 func (node *Node) insert(currentNode *Node, value rune) (root *Node, inserted *Node) {
 	// in case we come from root brackets (i.e. prev was set to null to force absolute priority)

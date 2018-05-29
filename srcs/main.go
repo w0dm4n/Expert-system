@@ -29,6 +29,7 @@ func main() {
 		}
 	}()
 	var parser Parser
+	parser.graph.Facts = make(map[string]*Fact)
 
 	parser.graph.build()
 	switch lenArgs := len(os.Args); lenArgs {
