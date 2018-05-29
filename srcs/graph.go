@@ -107,8 +107,6 @@ func (graph *Graph) integrate(lhsNode *Node, op *BaseOperator, rhsNode *Node) {
 		graph.integrateNode(rhsNode, invertLinked, true)
 		graph.integrateNode(lhsNode, linked, false)
 	}
-	println(linked.getParentNodes())
-	println(invertLinked.getParentNodes())
 }
 
 // Integrate the current node and the left and right of the node

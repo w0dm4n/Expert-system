@@ -15,7 +15,7 @@
             "program": "${fileDirname}",
             "env": {},
             // "args": ["c:/Users/j_c_b/go/src/Expert-system/test"],
-            "args": ["${workspaceFolder}/test"],
+            "args": ["${workspaceFolder}/testDebug"],
             "showLog": true
         }
     ]

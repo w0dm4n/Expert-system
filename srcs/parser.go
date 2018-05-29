@@ -172,7 +172,6 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	// conversion of binary tree nodes into graph nodes
 	// the graph has to know on which side it is from the operator
 	parser.graph.integrate(lhsRawNodes, operator, rhsRawNodes)
-	println("E is", parser.graph.Facts["E"].parentNodes)
 }
 
 type Node struct {

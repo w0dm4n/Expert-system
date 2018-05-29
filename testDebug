@@ -1,0 +1,3 @@
+C | !X + (B | D) => E # C implies E
+=C
+?E
