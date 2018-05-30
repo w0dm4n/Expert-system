@@ -70,6 +70,7 @@ func (parser *Parser) getOperator(content string) *BaseOperator {
 func (parser *Parser) activeOperands(content string, l int) {
 	operands := []rune(strings.Trim(content, " "))
 	for _, operand := range operands {
+		fmt.Println(operand)
 		if operand >= 'A' && operand <= 'Z' {
 			if parser.graph.operandExist(operand) {
 				parser.graph.activeOperand(operand)
@@ -188,7 +189,7 @@ func (node *Node) print(level int) {
 	for i := 0; i < level; i++ {
 		fmt.Printf(" ")
 	}
-	println(string(node.Value))
+	fmt.Println(string(node.Value))
 	if node.Left != nil {
 		node.Left.print(level + 1)
 	}
@@ -344,11 +345,11 @@ func (parser *Parser) parseContent(bytes []byte) {
 
 				parser.newOperation(operandsConditional, operandsAffected, operator)
 			} else if strings.Index(elem, INITIAL_FACTS) != -1 && strings.Index(elem, INITIAL_FACTS) == 0 {
-				parser.activeOperands(elem[1:len(elem)], l)
+				parser.activeOperands(elem[1:len(elem)-1], l)
 			} else if strings.Index(elem, INITIAL_QUERIES) != -1 && strings.Index(elem, INITIAL_QUERIES) == 0 {
 
 				// execute operations here
-				parser.getQueryResult(elem[1:len(elem)], l)
+				parser.getQueryResult(elem[1:len(elem)-1], l)
 			} else {
 				panic(fmt.Sprintf("%s %d: %s", "Bad syntax on line", l, "No operator found"))
 			}

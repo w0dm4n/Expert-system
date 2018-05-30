@@ -70,9 +70,9 @@ func (fact *Fact) apply() bool {
 
 func (fact *Fact) printRules() {
 	for parent := range fact.parentNodes {
-		println(parent)
+		fmt.Println(parent)
 	}
-	println(len(fact.parentNodes))
+	fmt.Println(len(fact.parentNodes))
 }
 
 type Graph struct {
@@ -94,7 +94,7 @@ func (graph *Graph) integrate(lhsNode *Node, op *BaseOperator, rhsNode *Node) {
 	rootRule := &Rule{Type: op.Value}
 	linked := graph.toNoder(lhsNode)
 	invertLinked := graph.toNoder(rhsNode)
-	println("linking")
+	fmt.Println("linking")
 	if rootRule.Type == "=>" {
 		rootRule.setParentNode(linked)
 		invertLinked.setParentNode(rootRule)
@@ -143,7 +143,7 @@ func (graph *Graph) integrateNode(node *Node, noder Noder, isParent bool) {
 // we return a new node which can be a new fact or just a rule
 func (graph *Graph) toNoder(node *Node) (noder Noder) {
 	if item, ok := graph.Facts[string(node.Value)]; ok {
-		println("got existing fact")
+		fmt.Println("got existing fact")
 		return item
 	} else {
 		if node.Value == '!' ||
@@ -151,11 +151,11 @@ func (graph *Graph) toNoder(node *Node) (noder Noder) {
 			node.Value == ([]rune(SYMBOL_OR))[0] ||
 			node.Value == ([]rune(SYMBOL_XOR))[0] {
 			// got rule
-			println("got rule")
+			fmt.Println("got rule")
 			return &Rule{Type: string(node.Value)}
 		} else {
 			// got fact
-			println("got new fact", string(node.Value))
+			fmt.Println("got new fact", string(node.Value))
 			graph.Facts[string(node.Value)] = &Fact{Name: string(node.Value)}
 			return graph.Facts[string(node.Value)]
 		}
