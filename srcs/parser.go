@@ -17,6 +17,13 @@ type Parser struct {
 	graph Graph
 }
 
+type Node struct {
+	Value  rune
+	Parent *Node
+	Left   *Node
+	Right  *Node
+}
+
 func (parser *Parser) removeComment(content string) string {
 	comment := strings.Index(content, "#")
 	if comment != -1 {
@@ -43,6 +50,7 @@ func (parser *Parser) trimOperand(content string) string {
 
 func (parser *Parser) parseOperands(line []string) {
 	for _, content := range line {
+		content = strings.TrimSpace(content)
 		content = parser.trimOperand(strings.ToUpper(content))
 
 		if len(content) == 1 {
@@ -70,7 +78,7 @@ func (parser *Parser) getOperator(content string) *BaseOperator {
 func (parser *Parser) activeOperands(content string, l int) {
 	operands := []rune(strings.Trim(content, " "))
 	for _, operand := range operands {
-		fmt.Println(operand)
+		// fmt.Println(operand)
 		if operand >= 'A' && operand <= 'Z' {
 			if parser.graph.operandExist(operand) {
 				parser.graph.activeOperand(operand)
@@ -167,19 +175,14 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 
 	lhsRawNodes, _ := arrangeOperations(conditional)
 	rhsRawNodes, _ := arrangeOperations(affected)
-	_ = lhsRawNodes
-	_ = rhsRawNodes
+
+	rhsRawNodes.print(1)
+	fmt.Println(operator.Value)
+	lhsRawNodes.print(1)
 
 	// conversion of binary tree nodes into graph nodes
 	// the graph has to know on which side it is from the operator
 	parser.graph.integrate(lhsRawNodes, operator, rhsRawNodes)
-}
-
-type Node struct {
-	Value  rune
-	Parent *Node
-	Left   *Node
-	Right  *Node
 }
 
 func (node *Node) print(level int) {
@@ -256,24 +259,24 @@ func arrangeOperations(operations string) (res *Node, length int) {
 	skip := 0
 
 	for pos, char := range []rune(operations) {
-		if char == ' ' {
+		if char == ' ' || char == '\r' {
 			continue
 		}
 		if skip > 0 {
 			skip--
 			continue
 		}
-		fmt.Printf("character %c starts at byte position %d\n", char, pos)
+		// fmt.Printf("character %c starts at byte position %d\n", char, pos)
 
 		switch char {
 		case '(':
-			fmt.Println("opening bracket")
+			// fmt.Println("opening bracket")
 			innerOps, length := arrangeOperations(operations[pos+1:])
 			skip = length - 1
 
-			fmt.Println("got back from resursive with")
-			innerOps.print(0)
-			fmt.Println("length was", skip)
+			// fmt.Println("got back from resursive with")
+			// innerOps.print(0)
+			// fmt.Println("length was", skip)
 
 			if root == nil {
 				root = innerOps
@@ -283,7 +286,7 @@ func arrangeOperations(operations string) (res *Node, length int) {
 			}
 			prev = prev.Parent
 		case ')':
-			fmt.Println("closing bracket at", pos)
+			// fmt.Println("closing bracket at", pos)
 			return root, pos
 		default:
 			if root == nil {
@@ -293,8 +296,8 @@ func arrangeOperations(operations string) (res *Node, length int) {
 				root, prev = root.insert(prev, char)
 			}
 		}
-		fmt.Println("current tree")
-		root.print(0)
+		// fmt.Println("current tree")
+		// root.print(0)
 		length++
 	}
 
@@ -309,8 +312,23 @@ func (parser *Parser) getQueryResult(content string, l int) {
 		if operand != nil {
 			fmt.Printf("%s is %t\n", string(operand.Value), operand.Active)
 			if fact, ok := parser.graph.Facts[string(elem)]; ok {
-				fmt.Println("inferring value of", fact)
-				fact.printRules()
+				// fmt.Println("inferring value of", fact)
+				fact.printRulesUntilFact()
+				fmt.Println("value of", fact.Name, "was", fact.initialValue)
+				visiteds := make(map[Noder][]FactResult)
+				for _, fact := range parser.graph.Facts {
+					if fact.initialValue == True {
+						res := FactResult{Value: True, Previous: nil}
+						visiteds[fact] = append(visiteds[fact], res)
+					}
+				}
+				requestingParents := make(map[Noder][]FactRequest)
+				originsStack := []*Fact{}
+				value := fact.apply(originsStack, nil, true, visiteds, requestingParents)
+				if value == DeadEnd {
+					value = fact.initialValue
+				}
+				fmt.Println("value of", fact.Name, "is now", value)
 			} else {
 				fmt.Println("no fact registered for", string(elem))
 			}

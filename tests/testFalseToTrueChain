@@ -1,0 +1,5 @@
+K => !A # does not happen at first
+!A => !B
+!B => K # return True because A was False and confirmed by True K
+=
+?K

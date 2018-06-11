@@ -1,6 +1,31 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
+
+type Value int
+
+const (
+	False Value = iota
+	True
+	Undetermined
+	DeadEnd
+)
+
+func (value Value) String() string {
+	names := [...]string{
+		"False",
+		"True",
+		"Undetermined",
+		"DeadEnd"}
+
+	if value < False || value > DeadEnd {
+		return "Unknown"
+	}
+	return names[value]
+}
 
 type Operand struct {
 	Value  rune
@@ -16,63 +41,449 @@ type Symbol struct {
 type Noder interface {
 	getParentNodes() []Noder
 	setParentNode(Noder)
-	apply() bool
+	getChildNodes() []Noder
+	setChildNode(Noder)
+	apply(originsStack []*Fact, previous Noder, sameSide bool, visiteds map[Noder][]FactResult, requestingParents map[Noder][]FactRequest) Value
+}
+
+type GraphNode struct {
+	parentNodes []Noder
+	childNodes  []Noder
+}
+
+func (node *GraphNode) getParentNodes() []Noder {
+	return node.parentNodes
+}
+
+func (node *GraphNode) setParentNode(noder Noder) {
+	node.parentNodes = append(node.parentNodes, noder)
+}
+
+func (node *GraphNode) getChildNodes() []Noder {
+	return node.childNodes
+}
+
+func (node *GraphNode) setChildNode(noder Noder) {
+	node.childNodes = append(node.childNodes, noder)
 }
 
 type Rule struct {
-	Type        string
-	parentNodes []Noder
+	Type string
+	GraphNode
 }
 
-func (rule *Rule) getParentNodes() []Noder {
-	return rule.parentNodes
-}
-
-func (rule *Rule) setParentNode(noder Noder) {
-	rule.parentNodes = append(rule.parentNodes, noder)
-}
-
-func (rule *Rule) apply() bool {
-	potentialsValues := make([]bool, len(rule.getParentNodes()))
-	for i, v := range rule.parentNodes {
-		potentialsValues[i] = v.apply()
+func opposite(value Value) Value {
+	if value == True {
+		return False
+	} else if value == False {
+		return True
+	} else {
+		return value
 	}
-	// need to return a definitive value or undetermined here
-	return potentialsValues[0]
+}
+
+func and(leftValue Value, rightValue Value) Value {
+	if leftValue == Undetermined || rightValue == Undetermined {
+		return Undetermined
+	}
+	if leftValue == True && rightValue == True {
+		return True
+	} else {
+		return False
+	}
+}
+
+func or(leftValue Value, rightValue Value) Value {
+	if leftValue == True || rightValue == True {
+		return True
+	} else if leftValue == False && rightValue == False {
+		return False
+	} else {
+		return Undetermined
+	}
+}
+
+// func or(leftValue Value, rightValue Value) Value {
+// 	if leftValue == True || rightValue == True {
+// 		return True
+// 	} else {
+// 		return Undefined
+// 	}
+// }
+
+func xor(leftValue Value, rightValue Value) Value {
+	if leftValue == True && rightValue == False || leftValue == False && rightValue == True {
+		return True
+	} else if leftValue != Undetermined && leftValue == rightValue {
+		return False
+	} else {
+		return Undetermined
+	}
+}
+
+// func xor(leftValue Value, rightValue Value) Value {
+// 	if leftValue == True && rightValue == False || leftValue == False && rightValue == True {
+// 		return True
+// 	} else {
+// 		return Undefined
+// 	}
+// }
+
+func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, visiteds map[Noder][]FactResult, requestingParents map[Noder][]FactRequest) Value {
+	// no need to be added to visited as it can be visited only once, or it will be recalculated
+	// visiteds[rule] = true
+	if previous == rule.parentNodes[0] {
+		log.Println("looking for child", rule.Type, "side", sameSide)
+	} else {
+		log.Println("looking for parent", rule.Type, "side", sameSide)
+	}
+	if rule.Type == "=>" {
+		value := rule.parentNodes[0].apply(originsStack, rule, false, visiteds, requestingParents)
+		if value == True {
+			return True
+		}
+		return DeadEnd
+	}
+
+	if !sameSide {
+		if rule.Type == "!" {
+			return opposite(rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents))
+		} else if rule.Type == "+" {
+			return and(rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents), rule.parentNodes[1].apply(originsStack, rule, sameSide, visiteds, requestingParents))
+		} else if rule.Type == "|" {
+			return or(rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents), rule.parentNodes[1].apply(originsStack, rule, sameSide, visiteds, requestingParents))
+		} else if rule.Type == "^" {
+			return xor(rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents), rule.parentNodes[1].apply(originsStack, rule, sameSide, visiteds, requestingParents))
+		} else {
+			log.Println("woops unknown left side rule")
+			return Undetermined
+		}
+	}
+
+	// Need to explore children to infer a value..
+
+	// We come from above
+	// Need to know children combined value
+	if previous == rule.parentNodes[0] {
+		children := rule.getChildNodes()
+		if rule.Type == "!" {
+			return opposite(children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents))
+		} else if rule.Type == "+" {
+			// We come from above
+			// Need to know children combined value
+			leftValue := children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			rightValue := children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			return and(leftValue, rightValue)
+		} else if rule.Type == "|" {
+			leftValue := children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			rightValue := children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			return or(leftValue, rightValue)
+		} else if rule.Type == "^" {
+			leftValue := children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			rightValue := children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			return xor(leftValue, rightValue)
+		}
+	}
+
+	// We come from below
+	// need to know parent and other child value if parent is true
+	parentValue := rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+	if parentValue != True && parentValue != False {
+		return parentValue
+	}
+	log.Println("parent was", parentValue)
+	children := rule.getChildNodes()
+	log.Println("applying", rule.Type)
+	var other Noder
+	for _, noder := range children {
+		if noder != previous {
+			other = noder
+			break
+		}
+	}
+	if rule.Type == "!" {
+		return opposite(parentValue)
+	} else if rule.Type == "+" {
+		// check other child to detect inconsistency
+		otherValue := other.apply(originsStack, rule, sameSide, visiteds, requestingParents)
+
+		if parentValue == True {
+			// just apply parent value directly
+			return parentValue
+		} else {
+			if otherValue == True {
+				return False
+			} else {
+				return Undetermined
+			}
+		}
+	} else if rule.Type == "|" {
+		// We come from below
+		// need to know other child value
+		otherValue := other.apply(originsStack, rule, sameSide, visiteds, requestingParents)
+		if parentValue == True {
+			if otherValue == False {
+				return True
+			} else {
+				return Undetermined
+			}
+		} else {
+			// if otherValue == False {
+			return False
+			// } else {
+			// return Undefined
+			// }
+		}
+	} else if rule.Type == "^" {
+		// We come from below
+		// need to know other child value
+		otherValue := other.apply(originsStack, rule, sameSide, visiteds, requestingParents)
+		if otherValue == False && parentValue == True {
+			return True
+		} else if otherValue == True && parentValue == True {
+			return False
+		} else if otherValue == True && parentValue == False {
+			return True
+		} else if otherValue == False && parentValue == False {
+			return False
+		} else {
+			return Undetermined
+		}
+	} else {
+		log.Println("woops unknown right side rule")
+		return Undetermined
+	}
 }
 
 type Fact struct {
 	Name         string
-	initialValue bool
-	parentNodes  []Noder
+	initialValue Value
+	GraphNode
 }
 
-func (fact *Fact) getParentNodes() []Noder {
-	return fact.parentNodes
-}
-
-func (fact *Fact) setParentNode(noder Noder) {
-	fact.parentNodes = append(fact.parentNodes, noder)
-}
-
-func (fact *Fact) apply() bool {
-	if len(fact.parentNodes) == 0 {
-		return fact.initialValue
-	} else {
-		potentialsValues := make([]bool, len(fact.parentNodes))
-		for i, v := range fact.parentNodes {
-			potentialsValues[i] = v.apply()
+func bestValue(values []FactResult) Value {
+	var gotTrue, gotFalse, gotUndefined, gotDeadEnd bool
+	if len(values) == 0 {
+		return Undetermined
+	}
+	for _, res := range values {
+		if res.Value == True {
+			gotTrue = true
+		} else if res.Value == False {
+			gotFalse = true
+		} else if res.Value == Undetermined {
+			gotUndefined = true
+		} else if res.Value == DeadEnd {
+			gotDeadEnd = true
 		}
-		// need to return a definitive value or undetermined here
-		return potentialsValues[0]
+	}
+	if gotTrue {
+		return True
+	} else if gotFalse {
+		return False
+	} else if gotUndefined {
+		return Undetermined
+	}
+	_ = gotDeadEnd
+	return DeadEnd
+}
+
+type FactResult struct {
+	Value    Value
+	Previous Noder
+}
+
+type FactRequest struct {
+	origin   *Fact
+	previous Noder
+}
+
+func stackPop(stack []*Fact) (res *Fact, resStack []*Fact) {
+	if len(stack) > 0 {
+		res, resStack = stack[len(stack)-1], stack[:len(stack)-1]
+	} else {
+		res, resStack = nil, stack
+	}
+	return
+}
+
+func stackContains(stack []*Fact, fact *Fact) bool {
+	for _, item := range stack {
+		if item == fact {
+			return true
+		}
+	}
+	return false
+}
+
+func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, visiteds map[Noder][]FactResult, requestingParents map[Noder][]FactRequest) Value {
+
+	entryVisiteds := make(map[Noder][]FactResult)
+	entryRequestingParents := make(map[Noder][]FactRequest)
+	_, _ = entryVisiteds, entryRequestingParents
+
+	// if visited already, return its value
+	if _, ok := visiteds[fact]; ok && !sameSide {
+		log.Println("looking for existing", fact.Name)
+		log.Println(fact.Name, "is", visiteds[fact])
+		value := bestValue(visiteds[fact])
+		if value == True || value == False {
+			return value
+		}
+		// return bestValue(visiteds[fact])
+	}
+	log.Println("looking for", fact.Name)
+
+	var lastOrigin *Fact
+	if len(originsStack) > 0 {
+		lastOrigin = originsStack[len(originsStack)-1]
+	}
+
+	// log.Println("make sure we don't already come from that parent")
+	if parents, ok := requestingParents[fact]; ok {
+		for _, request := range parents {
+			if request.previous == previous && request.origin == lastOrigin {
+				var resValue Value
+				// if fact.initialValue == True {
+				// 	resValue = True
+				// } else {
+				// 	resValue = origin.initialValue
+				// }
+
+				resValue = DeadEnd
+
+				log.Println("parent visited already, DeadEnd")
+				var res FactResult
+				// res = FactResult{Value: origin.initialValue, Previous: previous}
+				// log.Println("[origin]", origin.Name, "was", visiteds[origin], "and got", res)
+				// visiteds[origin] = append(visiteds[origin], res)
+
+				res = FactResult{Value: resValue, Previous: previous}
+				log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+				visiteds[fact] = append(visiteds[fact], res)
+				// return bestValue(visiteds[fact])
+				// return False
+				return DeadEnd
+			}
+		}
+	}
+	req := FactRequest{origin: lastOrigin, previous: previous}
+	requestingParents[fact] = append(requestingParents[fact], req)
+
+	if len(fact.parentNodes) == 0 /* || (fact.initialValue == True && !sameSide)*/ {
+		log.Println("applying default value")
+		res := FactResult{Value: fact.initialValue, Previous: previous}
+		log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+		visiteds[fact] = append(visiteds[fact], res)
+		// log.Println(fact.Name, "is", visiteds[fact])
+		return bestValue(visiteds[fact])
+	}
+
+	// potentialsValues := make([]Value, len(fact.parentNodes))
+	for _, v := range fact.parentNodes {
+		// if previous == v && sameSide {
+		// 	// parent is asking for the value, so we can't get one this way
+		// 	// potentialsValues[i] = Undefined
+		// 	log.Println("parent is asking for the value")
+		// 	res := FactResult{Value: DeadEnd, Previous: previous}
+		// 	log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+		// 	visiteds[fact] = append(visiteds[fact], res)
+		// } else {
+		// potentialsValues[i] = v.apply(fact, true, visiteds)
+		// visiteds[fact] = append(visiteds[fact], potentialsValues[i])
+		originsStack = append(originsStack, fact)
+		res := FactResult{Value: v.apply(originsStack, fact, true, visiteds, requestingParents), Previous: previous}
+		_, originsStack = stackPop(originsStack)
+		log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+		visiteds[fact] = append(visiteds[fact], res)
+		// }
+	}
+
+	// make sure we have a definitive true or false
+	var gotTrue, gotFalse, gotUndefined, gotDeadEnd bool
+	for _, res := range visiteds[fact] {
+		if res.Value == True {
+			gotTrue = true
+		} else if res.Value == False {
+			gotFalse = true
+		} else if res.Value == Undetermined {
+			gotUndefined = true
+		} else if res.Value == DeadEnd {
+			gotDeadEnd = true
+		}
+	}
+	if gotTrue && gotFalse {
+		panic(fmt.Sprint("opposite conditions on ", fact.Name))
+	}
+	//  else if gotTrue {
+	// 	visiteds[fact] = append(visiteds[fact], True)
+	// } else if gotFalse {
+	// 	visiteds[fact] = append(visiteds[fact], False)
+	// } else if gotUndefined || gotDeadEnd {
+	// 	visiteds[fact] = append(visiteds[fact], Undefined)
+	// } else {
+	// 	visiteds[fact] = append(visiteds[fact], False)
+	// }
+	_ = gotUndefined
+	_ = gotDeadEnd
+
+	log.Println(fact.Name, "is", visiteds[fact])
+	value := bestValue(visiteds[fact])
+	// if lastOrigin == nil && value == DeadEnd {
+	// 	// if !stackContains(originsStack, fact) && value == DeadEnd {
+	// 	log.Println(fact.Name, "is dead end and final, need to add its initial value and retry")
+	// 	res := FactResult{Value: fact.initialValue, Previous: previous}
+	// 	entryVisiteds[fact] = append(entryVisiteds[fact], res)
+	// 	log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+	// 	originsStack = append(originsStack, fact)
+	// 	value = fact.apply(originsStack, previous, true, entryVisiteds, entryRequestingParents)
+	// 	_, originsStack = stackPop(originsStack)
+	// }
+	// if stackContains(originsStack, fact) && value == DeadEnd {
+	// 	log.Println(fact.Name, "is DeadEnd and final, need to add its initial value and retry")
+	// 	res := FactResult{Value: fact.initialValue, Previous: previous}
+	// 	entryVisiteds[fact] = append(entryVisiteds[fact], res)
+	// 	log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+	// 	originsStack = append(originsStack, fact)
+	// 	value = fact.apply(originsStack, previous, true, entryVisiteds, entryRequestingParents)
+	// 	_, originsStack = stackPop(originsStack)
+	// }
+	// if value == DeadEnd {
+	// 	log.Println("fact is dead end, need to add its initial value")
+	// 	res := FactResult{Value: fact.initialValue, Previous: previous}
+	// 	log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+	// 	visiteds[fact] = append(visiteds[fact], res)
+	// 	value = res.Value
+	// }
+	if value == DeadEnd {
+		value = False
+	}
+	return value
+}
+
+func printRulesUntilFact(noder Noder) {
+	for _, parent := range noder.getParentNodes() {
+		if fact, ok := parent.(*Fact); ok {
+			// log.Println("converted into fact", fact)
+			// printRules(fact)
+			log.Print(fact.Name)
+			_ = fact
+		} else if rule, ok := parent.(*Rule); ok {
+			// log.Println("converted into rule", rule)
+			log.Print(rule.Type)
+			printRulesUntilFact(rule)
+			if rule.Type == "=>" {
+				log.Println()
+			}
+		}
 	}
 }
 
-func (fact *Fact) printRules() {
-	for parent := range fact.parentNodes {
-		fmt.Println(parent)
-	}
-	fmt.Println(len(fact.parentNodes))
+func (fact *Fact) printRulesUntilFact() {
+	log.Print(fact.Name)
+	log.Println(" has", len(fact.getParentNodes()), "parent nodes")
+	printRulesUntilFact(fact)
+	log.Println()
 }
 
 type Graph struct {
@@ -94,16 +505,20 @@ func (graph *Graph) integrate(lhsNode *Node, op *BaseOperator, rhsNode *Node) {
 	rootRule := &Rule{Type: op.Value}
 	linked := graph.toNoder(lhsNode)
 	invertLinked := graph.toNoder(rhsNode)
-	fmt.Println("linking")
+	// log.Println("linking")
 	if rootRule.Type == "=>" {
 		rootRule.setParentNode(linked)
+		linked.setChildNode(rootRule)
 		invertLinked.setParentNode(rootRule)
+		rootRule.setChildNode(invertLinked)
 		graph.integrateNode(lhsNode, linked, true)
 		graph.integrateNode(rhsNode, invertLinked, false)
 	}
 	if rootRule.Type == "<=>" {
 		rootRule.setParentNode(invertLinked)
+		invertLinked.setChildNode(rootRule)
 		linked.setParentNode(rootRule)
+		rootRule.setChildNode(linked)
 		graph.integrateNode(rhsNode, invertLinked, true)
 		graph.integrateNode(lhsNode, linked, false)
 	}
@@ -131,8 +546,10 @@ func (graph *Graph) integrateNode(node *Node, noder Noder, isParent bool) {
 	for _, linked := range linkeds {
 		if isParent {
 			noder.setParentNode(linked.Noder)
+			linked.Noder.setChildNode(noder)
 		} else {
 			linked.Noder.setParentNode(noder)
+			noder.setChildNode(linked.Noder)
 		}
 		graph.integrateNode(linked.Node, linked.Noder, isParent)
 	}
@@ -143,7 +560,7 @@ func (graph *Graph) integrateNode(node *Node, noder Noder, isParent bool) {
 // we return a new node which can be a new fact or just a rule
 func (graph *Graph) toNoder(node *Node) (noder Noder) {
 	if item, ok := graph.Facts[string(node.Value)]; ok {
-		fmt.Println("got existing fact")
+		// log.Println("got existing fact")
 		return item
 	} else {
 		if node.Value == '!' ||
@@ -151,11 +568,11 @@ func (graph *Graph) toNoder(node *Node) (noder Noder) {
 			node.Value == ([]rune(SYMBOL_OR))[0] ||
 			node.Value == ([]rune(SYMBOL_XOR))[0] {
 			// got rule
-			fmt.Println("got rule")
+			// log.Println("got rule")
 			return &Rule{Type: string(node.Value)}
 		} else {
 			// got fact
-			fmt.Println("got new fact", string(node.Value))
+			// log.Println("got new fact", string(node.Value))
 			graph.Facts[string(node.Value)] = &Fact{Name: string(node.Value)}
 			return graph.Facts[string(node.Value)]
 		}
@@ -186,6 +603,9 @@ func (graph *Graph) activeOperand(operand rune) {
 			elem.Active = true
 			break
 		}
+	}
+	if fact, ok := graph.Facts[string(operand)]; ok {
+		fact.initialValue = True
 	}
 }
 

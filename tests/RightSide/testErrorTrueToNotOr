@@ -1,0 +1,3 @@
+K => !(K | M) # K implies (K or M) is false which is not possible..
+=K
+?M

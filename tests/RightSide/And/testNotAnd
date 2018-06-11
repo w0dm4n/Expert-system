@@ -1,0 +1,3 @@
+A => !(I + K) # I is False or K is False or both => K is undetermined because I is not True
+=A
+?K
