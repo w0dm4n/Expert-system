@@ -192,13 +192,15 @@ func TestComplex(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.2", "value of F is now True") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.3", "value of G is now True") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.4", "value of H is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.5", "value of I is now True") }) // need to think about the result
-	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6", "value of I is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.5", "value of I is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6", "value of I is now True") })
 }
 
 func TestOptimizer(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/Optimizer/NotAndToOrNotNot", "value of K is now True") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/Optimizer/NotOrToAndNotNot", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Optimizer/Xor", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Optimizer/NotXor", "value of K is now False") })
 }
 
 func TestSpecial(t *testing.T) {

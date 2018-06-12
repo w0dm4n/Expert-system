@@ -1,9 +1,20 @@
-C | D => E | F
-!C + !B => E
-C => !E + !B
-G ^ !F => !H
-F | D => G + (H | I)
+#C | D => E | F
+#!C + !B => E
+#C => !E + !B
+#G ^ !F => !H
+#F | D => G + (H | I)
 #I + (F + G ^ D) => E ^ (F + !E | F + J)
 #I + (F + G ^ D) => E ^ (!F + !E | F + J)
-=C
-?I
+I => !E
+I => E ^ (!F + !E | F + J)
+=FI
+?J
+
+# C True
+# D False
+# E False
+# F True
+# G True
+# H False
+# I True
+# J

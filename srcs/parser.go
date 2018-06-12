@@ -181,9 +181,11 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	lhsRawNodes.print(1)
 
 	lhsRawNodes = optimiseTree(lhsRawNodes)
+	lhsRawNodes = optimiseTree(lhsRawNodes)
+	rhsRawNodes = optimiseTree(rhsRawNodes)
 	rhsRawNodes = optimiseTree(rhsRawNodes)
 
-	fmt.Println("optimized")
+	fmt.Println("final optimized")
 	rhsRawNodes.print(1)
 	fmt.Println(operator.Value)
 	lhsRawNodes.print(1)
@@ -213,16 +215,8 @@ func optimiseTree(node *Node) (root *Node) {
 
 	// !(A + B) => !A | !B
 	if node.Value == '!' && node.Left != nil && node.Left.Value == '+' {
-		if root.Parent != nil {
-			if root.Parent.Left == node {
-				root.Parent.Left = node.Left
-				root.Parent.Left.Parent = root.Parent.Left
-			} else {
-				root.Parent.Right = node.Left
-				root.Parent.Right.Parent = root.Parent.Right
-			}
-		}
-		root = node.Left
+		_, child := remove(node)
+		root = child
 		root.Value = '|'
 		insertBetween(root, root.Left, '!')
 		insertBetween(root, root.Right, '!')
@@ -231,25 +225,26 @@ func optimiseTree(node *Node) (root *Node) {
 
 	// !(A | B) => !A + !B
 	if node.Value == '!' && node.Left != nil && node.Left.Value == '|' {
-		if root.Parent != nil {
-			if root.Parent.Left == node {
-				root.Parent.Left = node.Left
-				root.Parent.Left.Parent = root.Parent.Left
-			} else {
-				root.Parent.Right = node.Left
-				root.Parent.Right.Parent = root.Parent.Right
-			}
-		}
-		root = node.Left
+		_, child := remove(node)
+		root = child
 		root.Value = '+'
 		insertBetween(root, root.Left, '!')
 		insertBetween(root, root.Right, '!')
 		node = root
 	}
 
+	// !(A + !B | !A + B) => !(A + !B) | !(!A + B) => (!A | !!B) | (!!A | B) => (!A | B) | (A | !B)
+
 	// A ^ B => A + !B | !A + B
 	if node.Value == '^' {
 		root = &Node{Value: '|', Left: node, Parent: node.Parent}
+		if root.Parent != nil {
+			if root.Parent.Left == node {
+				root.Parent.Left = root
+			} else {
+				root.Parent.Right = root
+			}
+		}
 
 		root.Left.Parent = root
 		root.Left.Value = '+'
@@ -257,16 +252,14 @@ func optimiseTree(node *Node) (root *Node) {
 		root.Right = copyTree(root.Left)
 		insertBetween(root.Left, root.Left.Left, '!')
 		insertBetween(root.Right, root.Right.Right, '!')
-		fmt.Println(string(node.Value))
-		fmt.Println(string(node.Parent.Value))
-		// root = root.Parent
 
 		node = root
 	}
 
 	if root.Left != nil {
 		root.Left = optimiseTree(root.Left)
-	} else if root.Right != nil {
+	}
+	if root.Right != nil {
 		root.Right = optimiseTree(root.Right)
 	}
 	return root
@@ -283,15 +276,35 @@ func copyTree(node *Node) (copy *Node) {
 	return
 }
 
-func insertBetween(parentNode *Node, childNode *Node, value rune) {
+func remove(node *Node) (root *Node, child *Node) {
+	child = node.Left
+	if node.Parent != nil {
+		if node.Parent.Left == node {
+			node.Left.Parent = node.Parent
+			node.Parent.Left = node.Left
+		} else {
+			node.Left.Parent = node.Parent
+			node.Parent.Right = node.Left
+		}
+		root = node.Parent
+	} else {
+		root = node.Left
+	}
+	return
+}
+
+func insertBetween(parentNode *Node, childNode *Node, value rune) (root *Node) {
+	root = parentNode
 	newNode := &Node{Value: value, Left: childNode, Parent: parentNode}
-	if parentNode.Left == childNode {
+	if parentNode == nil {
+		root = newNode
+	} else if parentNode.Left == childNode {
 		parentNode.Left = newNode
-		childNode.Parent = newNode
 	} else if parentNode.Right == childNode {
 		parentNode.Right = newNode
-		childNode.Parent = newNode
 	}
+	childNode.Parent = newNode
+	return
 }
 
 func (node *Node) print(level int) {
