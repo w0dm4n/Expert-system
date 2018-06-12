@@ -187,6 +187,11 @@ func TestRightAnd(t *testing.T) {
 	})
 }
 
+func TestRightXor(t *testing.T) {
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Xor/testFalseXorVar", "value of J is now True") })
+	// runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Xor/testTrueXorVar", "value of J is now False") })
+}
+
 func TestComplex(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.1", "value of E is now False") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.2", "value of F is now True") })

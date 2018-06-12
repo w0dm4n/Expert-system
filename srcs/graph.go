@@ -86,6 +86,9 @@ func and(leftValue Value, rightValue Value) Value {
 	if leftValue == Undetermined || rightValue == Undetermined {
 		return Undetermined
 	}
+	if leftValue == DeadEnd || rightValue == DeadEnd {
+		return DeadEnd
+	}
 	if leftValue == True && rightValue == True {
 		return True
 	} else {
@@ -130,8 +133,13 @@ func xor(leftValue Value, rightValue Value) Value {
 // }
 
 func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, visiteds map[Noder][]FactResult, requestingParents map[Noder][]FactRequest) Value {
-	// no need to be added to visited as it can be visited only once, or it will be recalculated
-	// visiteds[rule] = true
+
+	var lastOrigin *Fact
+	if len(originsStack) > 0 {
+		lastOrigin = originsStack[len(originsStack)-1]
+	}
+	_ = lastOrigin
+
 	if previous == rule.parentNodes[0] {
 		log.Println("looking for child", rule.Type, "side", sameSide)
 	} else {
@@ -164,29 +172,56 @@ func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 
 	// We come from above
 	// Need to know children combined value
+	// children := rule.getChildNodes()
+	// var leftValue Value
+	// // if children[0] == lastOrigin {
+	// // 	leftValue = DeadEnd
+	// // } else {
+	// leftValue = children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+	// // }
+	// var rightValue Value
+	// if len(children) > 1 {
+	// 	// if children[1] == lastOrigin {
+	// 	// 	rightValue = DeadEnd
+	// 	// } else if children[1] != nil {
+	// 	rightValue = children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+	// 	// }
+	// }
+
 	if previous == rule.parentNodes[0] {
 		children := rule.getChildNodes()
+		var leftValue Value
+		// if children[0] == lastOrigin {
+		// 	leftValue = DeadEnd
+		// 	return DeadEnd
+		// } else {
+		leftValue = children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+		// }
+		var rightValue Value
+		if len(children) > 1 {
+			// if children[1] == lastOrigin {
+			// 	rightValue = DeadEnd
+			// 	return DeadEnd
+
+			// } else if children[1] != nil {
+			rightValue = children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+			// }
+		}
 		if rule.Type == "!" {
-			return opposite(children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents))
+			return opposite(leftValue)
 		} else if rule.Type == "+" {
 			// We come from above
 			// Need to know children combined value
-			leftValue := children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
-			rightValue := children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
 			return and(leftValue, rightValue)
 		} else if rule.Type == "|" {
-			leftValue := children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
-			rightValue := children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
 			return or(leftValue, rightValue)
 		} else if rule.Type == "^" {
-			leftValue := children[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
-			rightValue := children[1].apply(originsStack, rule, sameSide, visiteds, requestingParents)
 			return xor(leftValue, rightValue)
 		}
 	}
 
 	// We come from below
-	// need to know parent and other child value if parent is true
+	// need to know parent and other child value if parent is true or false
 	parentValue := rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
 	if parentValue != True && parentValue != False {
 		return parentValue
@@ -322,6 +357,11 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	entryRequestingParents := make(map[Noder][]FactRequest)
 	_, _ = entryVisiteds, entryRequestingParents
 
+	var lastOrigin *Fact
+	if len(originsStack) > 0 {
+		lastOrigin = originsStack[len(originsStack)-1]
+	}
+
 	// if visited already, return its value
 	if _, ok := visiteds[fact]; ok && !sameSide {
 		log.Println("looking for existing", fact.Name)
@@ -334,10 +374,17 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	}
 	log.Println("looking for", fact.Name)
 
-	var lastOrigin *Fact
-	if len(originsStack) > 0 {
-		lastOrigin = originsStack[len(originsStack)-1]
-	}
+	// var lastOrigin *Fact
+	// if len(originsStack) > 0 {
+	// 	lastOrigin = originsStack[len(originsStack)-1]
+	// }
+	// if lastOrigin == fact && sameSide {
+	// 	log.Println("last origin was the same on the same side")
+	// 	// res := FactResult{Value: DeadEnd, Previous: previous}
+	// 	// log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+	// 	// visiteds[fact] = append(visiteds[fact], res)
+	// 	return bestValue(visiteds[fact])
+	// }
 
 	// log.Println("make sure we don't already come from that parent")
 	if parents, ok := requestingParents[fact]; ok {
@@ -368,6 +415,9 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 		}
 	}
 	req := FactRequest{origin: lastOrigin, previous: previous}
+	if req.origin != nil {
+		log.Println("reguesting parent is", req.origin.Name)
+	}
 	requestingParents[fact] = append(requestingParents[fact], req)
 
 	if len(fact.parentNodes) == 0 /* || (fact.initialValue == True && !sameSide)*/ {
@@ -378,6 +428,14 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 		// log.Println(fact.Name, "is", visiteds[fact])
 		return bestValue(visiteds[fact])
 	}
+
+	// if lastOrigin == fact && sameSide {
+	// 	log.Println("last origin was the same on the same side")
+	// 	// res := FactResult{Value: DeadEnd, Previous: previous}
+	// 	// log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+	// 	// visiteds[fact] = append(visiteds[fact], res)
+	// 	return DeadEnd
+	// }
 
 	// potentialsValues := make([]Value, len(fact.parentNodes))
 	for _, v := range fact.parentNodes {
@@ -455,7 +513,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	// 	visiteds[fact] = append(visiteds[fact], res)
 	// 	value = res.Value
 	// }
-	if value == DeadEnd {
+	if value == DeadEnd /*&& len(originsStack) == 0*/ {
 		value = False
 	}
 	return value

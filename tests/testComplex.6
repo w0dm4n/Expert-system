@@ -6,8 +6,10 @@
 #I + (F + G ^ D) => E ^ (F + !E | F + J)
 #I + (F + G ^ D) => E ^ (!F + !E | F + J)
 I => !E
-I => E ^ (!F + !E | F + J)
-=FI
+#I => E ^ (!F + !E | F + J)
+#I => E ^ (F + J)
+I => E ^ J
+=I
 ?J
 
 # C True
