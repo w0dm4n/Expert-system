@@ -162,7 +162,9 @@ func TestRightOr(t *testing.T) {
 
 func TestRightNot(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Not/testNot", "value of K is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Not/testNotNot", "value of K is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Not/testNotNot", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Not/testNotNot.1", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/Not/testNotNotNot", "value of K is now False") })
 }
 
 func TestRightAnd(t *testing.T) {
@@ -192,4 +194,13 @@ func TestComplex(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.4", "value of H is now False") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.5", "value of I is now True") }) // need to think about the result
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6", "value of I is now True") })
+}
+
+func TestOptimizer(t *testing.T) {
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Optimizer/NotAndToOrNotNot", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Optimizer/NotOrToAndNotNot", "value of K is now True") })
+}
+
+func TestSpecial(t *testing.T) {
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/testSequential", "opposite conditions on B") })
 }

@@ -35,7 +35,7 @@ func (parser *Parser) removeComment(content string) string {
 func (parser *Parser) trimOperand(content string) string {
 	var index = strings.Index(content, NEGATIVE_OPERATOR)
 	if index != -1 {
-		content = content[(index + 1):len(content)]
+		content = parser.trimOperand(content[(index + 1):len(content)])
 	}
 	index = strings.Index(content, PARENTHESIS_START)
 	if index != -1 {
@@ -180,20 +180,132 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	fmt.Println(operator.Value)
 	lhsRawNodes.print(1)
 
+	lhsRawNodes = optimiseTree(lhsRawNodes)
+	rhsRawNodes = optimiseTree(rhsRawNodes)
+
+	fmt.Println("optimized")
+	rhsRawNodes.print(1)
+	fmt.Println(operator.Value)
+	lhsRawNodes.print(1)
+
 	// conversion of binary tree nodes into graph nodes
 	// the graph has to know on which side it is from the operator
 	parser.graph.integrate(lhsRawNodes, operator, rhsRawNodes)
 }
 
+func optimiseTree(node *Node) (root *Node) {
+	root = node
+
+	// !! => nothing
+	if node.Value == '!' && node.Left != nil && node.Left.Value == '!' {
+		if root.Parent != nil {
+			if root.Parent.Left == node {
+				root.Parent.Left = node.Left.Left
+				root.Parent.Left.Parent = root.Parent.Left
+			} else {
+				root.Parent.Right = node.Left.Left
+				root.Parent.Right.Parent = root.Parent.Right
+			}
+		}
+		root = node.Left.Left
+		node = root
+	}
+
+	// !(A + B) => !A | !B
+	if node.Value == '!' && node.Left != nil && node.Left.Value == '+' {
+		if root.Parent != nil {
+			if root.Parent.Left == node {
+				root.Parent.Left = node.Left
+				root.Parent.Left.Parent = root.Parent.Left
+			} else {
+				root.Parent.Right = node.Left
+				root.Parent.Right.Parent = root.Parent.Right
+			}
+		}
+		root = node.Left
+		root.Value = '|'
+		insertBetween(root, root.Left, '!')
+		insertBetween(root, root.Right, '!')
+		node = root
+	}
+
+	// !(A | B) => !A + !B
+	if node.Value == '!' && node.Left != nil && node.Left.Value == '|' {
+		if root.Parent != nil {
+			if root.Parent.Left == node {
+				root.Parent.Left = node.Left
+				root.Parent.Left.Parent = root.Parent.Left
+			} else {
+				root.Parent.Right = node.Left
+				root.Parent.Right.Parent = root.Parent.Right
+			}
+		}
+		root = node.Left
+		root.Value = '+'
+		insertBetween(root, root.Left, '!')
+		insertBetween(root, root.Right, '!')
+		node = root
+	}
+
+	// A ^ B => A + !B | !A + B
+	if node.Value == '^' {
+		root = &Node{Value: '|', Left: node, Parent: node.Parent}
+
+		root.Left.Parent = root
+		root.Left.Value = '+'
+
+		root.Right = copyTree(root.Left)
+		insertBetween(root.Left, root.Left.Left, '!')
+		insertBetween(root.Right, root.Right.Right, '!')
+		fmt.Println(string(node.Value))
+		fmt.Println(string(node.Parent.Value))
+		// root = root.Parent
+
+		node = root
+	}
+
+	if root.Left != nil {
+		root.Left = optimiseTree(root.Left)
+	} else if root.Right != nil {
+		root.Right = optimiseTree(root.Right)
+	}
+	return root
+}
+
+func copyTree(node *Node) (copy *Node) {
+	if node == nil {
+		copy = node
+		return
+	}
+
+	//create new node and make it a copy of node pointed by root
+	copy = &Node{Value: node.Value, Left: copyTree(node.Left), Right: copyTree(node.Right), Parent: node.Parent}
+	return
+}
+
+func insertBetween(parentNode *Node, childNode *Node, value rune) {
+	newNode := &Node{Value: value, Left: childNode, Parent: parentNode}
+	if parentNode.Left == childNode {
+		parentNode.Left = newNode
+		childNode.Parent = newNode
+	} else if parentNode.Right == childNode {
+		parentNode.Right = newNode
+		childNode.Parent = newNode
+	}
+}
+
 func (node *Node) print(level int) {
 	if node.Right != nil {
+		// fmt.Print("r ")
 		node.Right.print(level + 1)
 	}
+	fmt.Print(level)
 	for i := 0; i < level; i++ {
 		fmt.Printf(" ")
 	}
 	fmt.Println(string(node.Value))
 	if node.Left != nil {
+		// fmt.Print("l ")
 		node.Left.print(level + 1)
 	}
 }
@@ -258,12 +370,13 @@ func arrangeOperations(operations string) (res *Node, length int) {
 	prev := root
 	skip := 0
 
+	// fmt.Println("arranging", operations)
 	for pos, char := range []rune(operations) {
-		if char == ' ' || char == '\r' {
-			continue
-		}
 		if skip > 0 {
 			skip--
+			continue
+		}
+		if char == ' ' || char == '\r' {
 			continue
 		}
 		// fmt.Printf("character %c starts at byte position %d\n", char, pos)
@@ -272,7 +385,7 @@ func arrangeOperations(operations string) (res *Node, length int) {
 		case '(':
 			// fmt.Println("opening bracket")
 			innerOps, length := arrangeOperations(operations[pos+1:])
-			skip = length - 1
+			skip = length
 
 			// fmt.Println("got back from resursive with")
 			// innerOps.print(0)
@@ -282,6 +395,7 @@ func arrangeOperations(operations string) (res *Node, length int) {
 				root = innerOps
 				prev = root
 			} else {
+				// fmt.Println("[bracket] inserting", string(innerOps.Value), "on", string(prev.Value))
 				root, prev = root.insertNode(prev, innerOps)
 			}
 			prev = prev.Parent
@@ -293,7 +407,11 @@ func arrangeOperations(operations string) (res *Node, length int) {
 				root = &Node{Value: char}
 				prev = root
 			} else {
+				// fmt.Println("inserting", string(char), "on", string(prev.Value))
 				root, prev = root.insert(prev, char)
+				for prev.Value == '!' && prev.Left != nil && prev.Left.Value == '!' {
+					prev = prev.Left
+				}
 			}
 		}
 		// fmt.Println("current tree")
@@ -352,6 +470,7 @@ func (parser *Parser) parseContent(bytes []byte) {
 	l := 1
 	for _, elem := range lines {
 		elem = parser.removeComment(elem)
+		elem = strings.TrimSpace(elem)
 		if len(elem) > 0 {
 			parser.parseOperands(strings.Split(elem, " "))
 			operator := parser.getOperator(elem)
@@ -363,11 +482,10 @@ func (parser *Parser) parseContent(bytes []byte) {
 
 				parser.newOperation(operandsConditional, operandsAffected, operator)
 			} else if strings.Index(elem, INITIAL_FACTS) != -1 && strings.Index(elem, INITIAL_FACTS) == 0 {
-				parser.activeOperands(elem[1:len(elem)-1], l)
-			} else if strings.Index(elem, INITIAL_QUERIES) != -1 && strings.Index(elem, INITIAL_QUERIES) == 0 {
-
+				parser.activeOperands(elem[1:len(elem)], l)
+			} else if strings.Index(elem, INITIAL_QUERIES) == 0 {
 				// execute operations here
-				parser.getQueryResult(elem[1:len(elem)-1], l)
+				parser.getQueryResult(elem[1:len(elem)], l)
 			} else {
 				panic(fmt.Sprintf("%s %d: %s", "Bad syntax on line", l, "No operator found"))
 			}
