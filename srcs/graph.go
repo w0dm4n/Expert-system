@@ -44,6 +44,7 @@ type Noder interface {
 	getChildNodes() []Noder
 	setChildNode(Noder)
 	apply(originsStack []*Fact, previous Noder, sameSide bool, visiteds map[Noder][]FactResult, requestingParents map[Noder][]FactRequest) Value
+	name() string
 }
 
 type GraphNode struct {
@@ -72,6 +73,14 @@ type Rule struct {
 	GraphNode
 }
 
+func (rule *Rule) name() string {
+	return rule.Type
+}
+
+func (fact *Fact) name() string {
+	return fact.Name
+}
+
 func opposite(value Value) Value {
 	if value == True {
 		return False
@@ -83,16 +92,14 @@ func opposite(value Value) Value {
 }
 
 func and(leftValue Value, rightValue Value) Value {
-	if leftValue == Undetermined || rightValue == Undetermined {
-		return Undetermined
-	}
-	if leftValue == DeadEnd || rightValue == DeadEnd {
-		return DeadEnd
-	}
-	if leftValue == True && rightValue == True {
-		return True
-	} else {
+	if leftValue == False || rightValue == False {
 		return False
+	} else if leftValue == True && rightValue == True {
+		return True
+	} else if leftValue == Undetermined || rightValue == Undetermined {
+		return Undetermined
+	} else {
+		return DeadEnd
 	}
 }
 
@@ -101,8 +108,10 @@ func or(leftValue Value, rightValue Value) Value {
 		return True
 	} else if leftValue == False && rightValue == False {
 		return False
-	} else {
+	} else if leftValue == Undetermined || rightValue == Undetermined {
 		return Undetermined
+	} else {
+		return DeadEnd
 	}
 }
 
@@ -222,11 +231,14 @@ func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 
 	// We come from below
 	// need to know parent and other child value if parent is true or false
-	parentValue := rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+	var parentValue Value
+	parentValue = rule.parentNodes[0].apply(originsStack, rule, sameSide, visiteds, requestingParents)
+
+	log.Println("coming from below, checking other side")
+	log.Println(rule.parentNodes[0].name(), "parent was", parentValue)
 	if parentValue != True && parentValue != False {
 		return parentValue
 	}
-	log.Println("parent was", parentValue)
 	children := rule.getChildNodes()
 	log.Println("applying", rule.Type)
 	var other Noder
@@ -256,6 +268,7 @@ func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 		// We come from below
 		// need to know other child value
 		otherValue := other.apply(originsStack, rule, sameSide, visiteds, requestingParents)
+		log.Println("other value is", otherValue)
 		if parentValue == True {
 			if otherValue == False {
 				return True
@@ -398,8 +411,9 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 				// }
 
 				resValue = DeadEnd
+				// resValue = bestValue(visiteds[fact])
 
-				log.Println("parent visited already, DeadEnd")
+				log.Println("parent visited already,", resValue)
 				var res FactResult
 				// res = FactResult{Value: origin.initialValue, Previous: previous}
 				// log.Println("[origin]", origin.Name, "was", visiteds[origin], "and got", res)
@@ -408,15 +422,19 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 				res = FactResult{Value: resValue, Previous: previous}
 				log.Println(fact.Name, "was", visiteds[fact], "and got", res)
 				visiteds[fact] = append(visiteds[fact], res)
-				// return bestValue(visiteds[fact])
+				return resValue
 				// return False
-				return DeadEnd
+				// return DeadEnd
 			}
 		}
 	}
 	req := FactRequest{origin: lastOrigin, previous: previous}
 	if req.origin != nil {
-		log.Println("reguesting parent is", req.origin.Name)
+		log.Println("requesting parent is", req.origin.Name)
+		// if req.origin == fact {
+		// 	log.Println("same as current, returning", bestValue(visiteds[fact]))
+		// 	return bestValue(visiteds[fact])
+		// }
 	}
 	requestingParents[fact] = append(requestingParents[fact], req)
 
