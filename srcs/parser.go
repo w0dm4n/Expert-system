@@ -324,7 +324,14 @@ func (node *Node) print(level int) {
 	}
 }
 
-var prios = map[rune]int{'(': 1, ')': 2, '!': 3, ([]rune(SYMBOL_AND))[0]: 4, ([]rune(SYMBOL_OR))[0]: 5, ([]rune(SYMBOL_XOR))[0]: 6}
+var prios = map[rune]int{
+	'(': 1,
+	')': 2,
+	'!': 3,
+	([]rune(SYMBOL_AND))[0]: 4,
+	([]rune(SYMBOL_OR))[0]:  5,
+	([]rune(SYMBOL_XOR))[0]: 6,
+}
 
 func (node *Node) insert(currentNode *Node, value rune) (root *Node, inserted *Node) {
 	// in case we come from root brackets (i.e. prev was set to null to force absolute priority)

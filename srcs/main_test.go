@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -20,6 +21,13 @@ import (
 
 // 	assert.PanicsWithValue(t, "opposite conditions on K", func() { parser.parseContent(data) }, "failed to panic correctly")
 // }
+
+func TestMain(m *testing.M) {
+	log.SetFlags(0)
+	log.SetOutput(ioutil.Discard)
+	code := m.Run()
+	os.Exit(code)
+}
 
 func testFileError(t *testing.T, file string, expectedError string) {
 	var parser Parser
