@@ -1,23 +1,24 @@
-# C | D => E | F
-# !C + !B => E
-# C => !E + !B
-# G ^ !F => !H
-# F | D => G + (H | I)
+C | D => E | F
+!C + !B => E
+C => !E + !B
+G ^ !F => !H
+F | D => G + (H | I)
 # I + (F + G ^ D) => E ^ (F + !E | F + J)
+I + (F + G ^ D) => E ^ (!F + !E | F + J)
 # C => !D
-# I + (F + G ^ D) => E ^ (!F + !E | F + J)
 # I => E ^ (!F + !E | F + J)
 # I => E ^ ((!M + !N) | (F + J))
-I => !E
-I => (!F | E) | (F + J)
-I => !D
+# I => !E
+# I => (!F | E) | (F + J)
+# I => !D
 # I + ((!F | !G) + D | (F + G) + !D) => (!E + ((!F + !E) | (J + F))) | (E + ((F | E) + (!F | !J)))
 # I => (!E + ((!F + !E) | (J + F))) | (E + ((F | E) + (!F | !J)))
 # x + ((o | o) + o | (x + x) + x) => (x + ((o + x) | (? + x))) | (o + ((x | o) + (o | !?)))
 # x + o | x => (x + (o | (? + x)) | (o + x + (o | !?)))
 # x => x + ? + x | o
 # x => x + ? + x
-=IF
+# =IFG
+=C
 ?J
 
 # C True

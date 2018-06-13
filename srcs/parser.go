@@ -513,5 +513,5 @@ func (parser *Parser) parseContent(bytes []byte) {
 		l++
 	}
 
-	parser.graph.printConnections()
+	// parser.graph.printConnections()
 }

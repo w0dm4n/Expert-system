@@ -158,6 +158,8 @@ func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 		value := rule.parentNodes[0].apply(originsStack, rule, false, visiteds, requestingParents)
 		if value == True {
 			return True
+		} else if value == Undetermined {
+			return Undetermined
 		}
 		return DeadEnd
 	}
@@ -268,7 +270,7 @@ func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 		// We come from below
 		// need to know other child value
 		otherValue := other.apply(originsStack, rule, sameSide, visiteds, requestingParents)
-		log.Println("other value is", otherValue)
+		log.Println(other.name(), "other value is", otherValue)
 		if parentValue == True {
 			if otherValue == False {
 				return True
@@ -312,7 +314,7 @@ type Fact struct {
 func bestValue(values []FactResult) Value {
 	var gotTrue, gotFalse, gotUndefined, gotDeadEnd bool
 	if len(values) == 0 {
-		return Undetermined
+		return DeadEnd
 	}
 	for _, res := range values {
 		if res.Value == True {
@@ -410,8 +412,8 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 				// 	resValue = origin.initialValue
 				// }
 
-				resValue = DeadEnd
-				// resValue = bestValue(visiteds[fact])
+				// resValue = DeadEnd
+				resValue = bestValue(visiteds[fact])
 
 				log.Println("parent visited already,", resValue)
 				var res FactResult
@@ -570,7 +572,19 @@ type Graph struct {
 }
 
 func (graph *Graph) printConnections() {
-	fmt.Printf("%+v", graph.Facts)
+	fmt.Printf("%+v\n", graph.Facts)
+	for _, fact := range graph.Facts {
+		visiteds := make(map[Noder][]FactResult)
+		for _, fact := range graph.Facts {
+			if fact.initialValue == True {
+				res := FactResult{Value: True, Previous: nil}
+				visiteds[fact] = append(visiteds[fact], res)
+			}
+		}
+		requestingParents := make(map[Noder][]FactRequest)
+		originsStack := []*Fact{}
+		fmt.Println(fact.Name, "final to", fact.apply(originsStack, nil, true, visiteds, requestingParents))
+	}
 }
 
 func (graph *Graph) print() {
