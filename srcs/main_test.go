@@ -157,7 +157,12 @@ func TestBasics(t *testing.T) {
 }
 
 func TestRightOr(t *testing.T) {
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/RightSide/testErrorTrueToNotOr", "opposite conditions on K") })
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/RightSide/Or/testErrorTrueToNotOr", "opposite conditions on K")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/RightSide/Or/testOrOr", "value of J is now True")
+	})
 }
 
 func TestRightNot(t *testing.T) {

@@ -19,7 +19,8 @@
             // "args": ["${workspaceFolder}/tests/testComplex.6"],
             // "args": ["${workspaceFolder}/tests/RightSide/Not/testNotNot"],
             // "args": ["${workspaceFolder}/tests/RightSide/Xor/testTrueXorVar.1"],
-            "args": ["${workspaceFolder}/tests/testComplex.5"],
+            "args": ["${workspaceFolder}/tests/RightSide/Or/testOrOr"],
+            // "args": ["${workspaceFolder}/tests/testComplex.5bis"],
             // "args": ["${workspaceFolder}/tests/testErrorTrueToNotOr"],
             // "args": ["${workspaceFolder}/testDebug"],
             "showLog": true

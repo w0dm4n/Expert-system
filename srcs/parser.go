@@ -176,6 +176,7 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	lhsRawNodes, _ := arrangeOperations(conditional)
 	rhsRawNodes, _ := arrangeOperations(affected)
 
+	fmt.Println("actual tree")
 	rhsRawNodes.print(1)
 	fmt.Println(operator.Value)
 	lhsRawNodes.print(1)
@@ -314,7 +315,7 @@ func (node *Node) print(level int) {
 	}
 	fmt.Print(level)
 	for i := 0; i < level; i++ {
-		fmt.Printf(" ")
+		fmt.Printf("  ")
 	}
 	fmt.Println(string(node.Value))
 	if node.Left != nil {
@@ -383,8 +384,9 @@ func arrangeOperations(operations string) (res *Node, length int) {
 	prev := root
 	skip := 0
 
-	// fmt.Println("arranging", operations)
+	fmt.Println("arranging", operations)
 	for pos, char := range []rune(operations) {
+		// prev := root
 		if skip > 0 {
 			skip--
 			continue
@@ -396,44 +398,49 @@ func arrangeOperations(operations string) (res *Node, length int) {
 
 		switch char {
 		case '(':
-			// fmt.Println("opening bracket")
-			innerOps, length := arrangeOperations(operations[pos+1:])
+			fmt.Println("opening bracket")
+			var innerOps *Node
+			innerOps, length = arrangeOperations(operations[pos+1:])
 			skip = length
 
-			// fmt.Println("got back from resursive with")
-			// innerOps.print(0)
-			// fmt.Println("length was", skip)
+			fmt.Println("got back from resursive with")
+			innerOps.print(0)
+			fmt.Println("length was", skip)
 
 			if root == nil {
 				root = innerOps
 				prev = root
 			} else {
-				// fmt.Println("[bracket] inserting", string(innerOps.Value), "on", string(prev.Value))
+				fmt.Println("[bracket] inserting", string(innerOps.Value), "on", string(prev.Value))
 				root, prev = root.insertNode(prev, innerOps)
 			}
 			prev = prev.Parent
 		case ')':
-			// fmt.Println("closing bracket at", pos)
-			return root, pos
+			fmt.Println("closing bracket at", pos)
+			return root, pos + 1
 		default:
 			if root == nil {
 				root = &Node{Value: char}
 				prev = root
 			} else {
-				// fmt.Println("inserting", string(char), "on", string(prev.Value))
+				if prev != nil {
+					fmt.Println("inserting", string(char), "on", string(prev.Value))
+				} else {
+					fmt.Println("inserting", string(char), "on", nil)
+				}
 				root, prev = root.insert(prev, char)
 				for prev.Value == '!' && prev.Left != nil && prev.Left.Value == '!' {
 					prev = prev.Left
 				}
 			}
 		}
-		// fmt.Println("current tree")
-		// root.print(0)
+		fmt.Println("current tree")
+		root.print(0)
 		length++
 	}
 
 	res = root
-	return res, length
+	return
 }
 
 func (parser *Parser) getQueryResult(content string, l int) {

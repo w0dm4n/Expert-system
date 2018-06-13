@@ -378,7 +378,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	// if visited already, return its value
 	if _, ok := visiteds[fact]; ok && !sameSide {
 		log.Println("looking for existing", fact.Name)
-		log.Println(fact.Name, "is", visiteds[fact])
+		log.Println("------", fact.Name, "is", visiteds[fact])
 		value := bestValue(visiteds[fact])
 		if value == True || value == False {
 			return value
@@ -503,7 +503,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	_ = gotUndefined
 	_ = gotDeadEnd
 
-	log.Println(fact.Name, "is", visiteds[fact])
+	log.Println("======", fact.Name, "is", visiteds[fact])
 	value := bestValue(visiteds[fact])
 	// if lastOrigin == nil && value == DeadEnd {
 	// 	// if !stackContains(originsStack, fact) && value == DeadEnd {
