@@ -414,6 +414,9 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 
 				// resValue = DeadEnd
 				resValue = bestValue(visiteds[fact])
+				if resValue == Undetermined {
+					resValue = DeadEnd
+				}
 
 				log.Println("parent visited already,", resValue)
 				var res FactResult

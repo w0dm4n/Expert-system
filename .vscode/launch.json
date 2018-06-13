@@ -17,7 +17,7 @@
             // "args": ["c:/Users/j_c_b/go/src/Expert-system/test"],
             // "args": ["${workspaceFolder}/tests/testSequential"],
             // "args": ["${workspaceFolder}/tests/testComplex.6"],
-            "args": ["${workspaceFolder}/tests/testComplex.8"],
+            "args": ["${workspaceFolder}/tests/testComplex.6.3"],
             // "args": ["${workspaceFolder}/tests/RightSide/Not/testNotNot"],
             // "args": ["${workspaceFolder}/tests/RightSide/Xor/testTrueXorVar.1"],
             // "args": ["${workspaceFolder}/tests/RightSide/Or/testOrOr"],

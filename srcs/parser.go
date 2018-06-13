@@ -384,7 +384,7 @@ func arrangeOperations(operations string) (res *Node, length int) {
 	prev := root
 	skip := 0
 
-	fmt.Println("arranging", operations)
+	// fmt.Println("arranging", operations)
 	for pos, char := range []rune(operations) {
 		// prev := root
 		if skip > 0 {
@@ -398,44 +398,44 @@ func arrangeOperations(operations string) (res *Node, length int) {
 
 		switch char {
 		case '(':
-			fmt.Println("opening bracket")
+			// fmt.Println("opening bracket")
 			var innerOps *Node
 			innerOps, length = arrangeOperations(operations[pos+1:])
 			skip = length
 
-			fmt.Println("got back from resursive with")
-			innerOps.print(0)
-			fmt.Println("length was", skip)
+			// fmt.Println("got back from resursive with")
+			// innerOps.print(0)
+			// fmt.Println("length was", skip)
 
 			if root == nil {
 				root = innerOps
 				prev = root
 			} else {
-				fmt.Println("[bracket] inserting", string(innerOps.Value), "on", string(prev.Value))
+				// fmt.Println("[bracket] inserting", string(innerOps.Value), "on", string(prev.Value))
 				root, prev = root.insertNode(prev, innerOps)
 			}
 			prev = prev.Parent
 		case ')':
-			fmt.Println("closing bracket at", pos)
+			// fmt.Println("closing bracket at", pos)
 			return root, pos + 1
 		default:
 			if root == nil {
 				root = &Node{Value: char}
 				prev = root
 			} else {
-				if prev != nil {
-					fmt.Println("inserting", string(char), "on", string(prev.Value))
-				} else {
-					fmt.Println("inserting", string(char), "on", nil)
-				}
+				// if prev != nil {
+				// 	fmt.Println("inserting", string(char), "on", string(prev.Value))
+				// } else {
+				// 	fmt.Println("inserting", string(char), "on", nil)
+				// }
 				root, prev = root.insert(prev, char)
 				for prev.Value == '!' && prev.Left != nil && prev.Left.Value == '!' {
 					prev = prev.Left
 				}
 			}
 		}
-		fmt.Println("current tree")
-		root.print(0)
+		// fmt.Println("current tree")
+		// root.print(0)
 		length++
 	}
 
