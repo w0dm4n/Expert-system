@@ -533,6 +533,9 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	// 	visiteds[fact] = append(visiteds[fact], res)
 	// 	value = res.Value
 	// }
+	// if gotUndefined && gotDeadEnd {
+	// 	value = False
+	// }
 	if value == DeadEnd /*&& len(originsStack) == 0*/ {
 		value = False
 	}

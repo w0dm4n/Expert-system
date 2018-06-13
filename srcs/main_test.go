@@ -207,6 +207,7 @@ func TestComplex(t *testing.T) {
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6", "value of J is now True") })
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6bis", "value of J is now Undetermined") })
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6.2", "opposite conditions on E") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6.3", "opposite conditions on E") })
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.7", "value of J is now Undetermined") })
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.8", "value of J is now Undetermined") }) // takes too long
 }
@@ -219,5 +220,5 @@ func TestOptimizer(t *testing.T) {
 }
 
 func TestSpecial(t *testing.T) {
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testSequential", "opposite conditions on B") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/testSequential", "opposite conditins on B") })
 }
