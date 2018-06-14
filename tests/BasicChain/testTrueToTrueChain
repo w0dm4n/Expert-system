@@ -1,0 +1,5 @@
+K => !A
+!A => !B
+!B => K # return true because k start true and becomes true by application of the rule
+=K
+?K

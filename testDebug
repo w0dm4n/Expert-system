@@ -1,0 +1,12 @@
+#C | !X + (B | D) => E # C | !X + (B | D) implies E
+C | D => E | F
+!C + !B => E
+C => !E + !B
+#C => E
+G ^ !F => !H
+F | D => G + (H | I)
+I + (F + G ^ D) => E ^ (F + !E | F + J)
+I + (F + G ^ D) => E ^ (!F + !E | F + J)
+K => !(K | M) # K implies (K or M) is false which is not possible..
+=CK
+?M

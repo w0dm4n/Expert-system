@@ -1,0 +1,4 @@
+A => K + J # impossible on K
+A => !K
+=A
+?K

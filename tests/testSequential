@@ -1,0 +1,5 @@
+A => !B
+!A => B # B becomes true and cannot become false again => opposite conditions on B
+B => A
+=
+?B

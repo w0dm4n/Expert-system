@@ -1,0 +1,3 @@
+!K => !K # return True because this rule never happens
+=K
+?K
