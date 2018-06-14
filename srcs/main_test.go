@@ -393,8 +393,14 @@ func TestMainProgram(t *testing.T) {
 
 	outStr := redirector.endRedirect()
 	t.Log(outStr)
-	expectedResult := "Le fichier spécifié est introuvable."
-	if !strings.Contains(outStr, expectedResult) {
+	expectedResult := []string{"Le fichier spécifié est introuvable.", "no such file or directory"}
+	var gotRes bool
+	for _, res := range expectedResult {
+		if strings.Contains(outStr, res) {
+			gotRes = true
+		}
+	}
+	if !gotRes {
 		t.Error("NOT", expectedResult)
 	}
 }
