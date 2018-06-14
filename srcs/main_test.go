@@ -314,7 +314,7 @@ func TestCorrection(t *testing.T) {
 }
 
 func TestParsing(t *testing.T) {
-	folder := "../tests/Parsing/"
+	folder := "../tests/Parsing/Condition/"
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testBadOperator", "Unknown char: -") })
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testRightBadOperator", "Unknown char: -") })
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testBadMiddle", "Bad syntax on line 1: No operator found") })
@@ -363,6 +363,9 @@ func TestParsing(t *testing.T) {
 	})
 	runTest(t, func(t *testing.T) {
 		testFile(t, folder+"testBadBrackets.6.1", "missing operator between operands around A")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.7.1", "issue with +")
 	})
 
 }
