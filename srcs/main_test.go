@@ -332,7 +332,7 @@ func TestParsing(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testRightNothing", "Rule right side is empty!") })
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testLeftNothing", "Rule left side is empty!") })
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testLeftNothing.1", "Rule left side is empty!") })
-	runTest(t, func(t *testing.T) { testFile(t, folder+"testOperatorFirst", "issue with +") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testOperatorFirst", "+ operator requires two operands") })
 	runTest(t, func(t *testing.T) { testFile(t, folder+"testMissingOperator", "Missing operator around A") })
 	runTest(t, func(t *testing.T) {
 		testFile(t, folder+"testMissingOperator.1", "! cannot be placed alone between operands")
@@ -344,7 +344,7 @@ func TestParsing(t *testing.T) {
 		testFile(t, folder+"testMissingOperator.2.1", "! cannot be placed alone between operands")
 	})
 	runTest(t, func(t *testing.T) {
-		testFile(t, folder+"testMissingOperand", "issue with +")
+		testFile(t, folder+"testMissingOperand", "+ operator requires two operands")
 	})
 	runTest(t, func(t *testing.T) {
 		testFile(t, folder+"testMissingOperand.1", "+ operator requires two operands")
@@ -374,7 +374,7 @@ func TestParsing(t *testing.T) {
 		testFile(t, folder+"testBadBrackets.6.1", "missing operator between operands around A")
 	})
 	runTest(t, func(t *testing.T) {
-		testFile(t, folder+"testBadBrackets.7.1", "issue with +")
+		testFile(t, folder+"testBadBrackets.7.1", "missing operator between operands around A")
 	})
 	runTest(t, func(t *testing.T) {
 		testFile(t, folder+"testBadBrackets.8.1", "extra closing bracket")

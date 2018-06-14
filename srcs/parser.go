@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -56,12 +58,10 @@ func (parser *Parser) parseOperands(line []string) {
 		content = strings.TrimSpace(content)
 		content = parser.trimOperand(strings.ToUpper(content))
 
-		if len(content) == 1 {
-			operand := rune(content[0])
-
-			if operand >= 'A' && operand <= 'Z' {
-				if !parser.graph.operandExist(operand) {
-					parser.graph.addOperand(operand)
+		for _, char := range content {
+			if char >= 'A' && char <= 'Z' {
+				if !parser.graph.operandExist(char) {
+					parser.graph.addOperand(char)
 				}
 			}
 		}
@@ -86,7 +86,7 @@ func (parser *Parser) activeOperands(content string, l int) {
 			if parser.graph.operandExist(operand) {
 				parser.graph.activeOperand(operand)
 			} else {
-				panic(fmt.Sprintf("%s %d: %s (%s)", "Bad syntax on line", l, "Operand do not exist or not used", string(operand)))
+				panic(fmt.Sprintf("%s %d: %s (%s)", "Bad syntax on line", l, "Operand does not exist or is not used", string(operand)))
 			}
 		} else {
 			panic(fmt.Sprintf("%s %d: %s", "Bad syntax on line", l, "Invalid operand syntax on initial fact"))
@@ -150,7 +150,7 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 
 	conditionalContent := strings.Split(conditional, " ")
 	var operands []Operand
-	var symbols []Symbol
+	// var symbols []Symbol
 	var inParenthesis = false
 
 	_ = inParenthesis
@@ -165,23 +165,24 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	// check left side brackets
 	checkBrackets(conditional)
 
-	symbolCount := 0
+	// symbolCount := 0
 	bracketStartCount := 0
 	bracketEndCount := 0
 	for _, elem := range conditionalContent {
+		elem = strings.TrimSpace(elem)
 		if strings.Contains(elem, PARENTHESIS_START) {
 			inParenthesis = true
 			bracketStartCount += strings.Count(elem, PARENTHESIS_START)
 		}
-		symbolBase := parser.getSymbol(elem)
-		if symbolBase != nil {
-			symbolCount++ // until next symbol
-			symbol := Symbol{symbolBase.Value, parser.getOperandConcerned(operands, conditionalContent, symbolCount), inParenthesis}
-			if len(symbol.OperandsAffected) == 0 {
-				panic(fmt.Sprintf("issue with %s", symbol.Value))
-			}
-			symbols = append(symbols, symbol)
-		}
+		// symbolBase := parser.getSymbol(elem)
+		// if symbolBase != nil {
+		// 	symbolCount++ // until next symbol
+		// 	symbol := Symbol{symbolBase.Value, parser.getOperandConcerned(operands, conditionalContent, symbolCount), inParenthesis}
+		// 	if len(symbol.OperandsAffected) == 0 {
+		// 		panic(fmt.Sprintf("issue with %s", symbol.Value))
+		// 	}
+		// 	symbols = append(symbols, symbol)
+		// }
 		if strings.Contains(elem, PARENTHESIS_END) {
 			inParenthesis = false
 			bracketEndCount += strings.Count(elem, PARENTHESIS_END)
@@ -215,9 +216,9 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	}
 
 	// C | !X + (B + X | (F | !X))
-	for _, elem := range symbols {
-		fmt.Printf("%s (%t) %s %s (%t) (Parenthese %t)\n", string(elem.OperandsAffected[0].Value), elem.OperandsAffected[0].Active, elem.Value, string(elem.OperandsAffected[1].Value), elem.OperandsAffected[1].Active, elem.inParenthesis)
-	}
+	// for _, elem := range symbols {
+	// 	fmt.Printf("%s (%t) %s %s (%t) (Parenthese %t)\n", string(elem.OperandsAffected[0].Value), elem.OperandsAffected[0].Active, elem.Value, string(elem.OperandsAffected[1].Value), elem.OperandsAffected[1].Active, elem.inParenthesis)
+	// }
 
 	// fmt.Println(symbols, "\n", operands)
 	// for _, elem := range operands {
@@ -245,9 +246,9 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 		panic(fmt.Sprint("Rule right side is empty!"))
 	}
 
-	fmt.Println("actual tree")
+	log.Println("actual tree")
 	rhsRawNodes.print(1)
-	fmt.Println(operator.Value)
+	log.Println(operator.Value)
 	lhsRawNodes.print(1)
 
 	rhsRawNodes.check()
@@ -261,9 +262,9 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	lhsRawNodes = optimiseTree(lhsRawNodes)
 	rhsRawNodes = optimiseTree(rhsRawNodes)
 
-	fmt.Println("final optimized")
+	log.Println("final optimized")
 	rhsRawNodes.print(1)
-	fmt.Println(operator.Value)
+	log.Println(operator.Value)
 	lhsRawNodes.print(1)
 
 	// conversion of binary tree nodes into graph nodes
@@ -417,11 +418,17 @@ func (node *Node) print(level int) {
 		// fmt.Print("r ")
 		node.Right.print(level + 1)
 	}
-	fmt.Print(level)
+	logStr := ""
+	// log.Print(level)
+	logStr += fmt.Sprint(level)
 	for i := 0; i < level; i++ {
-		fmt.Printf("  ")
+		logStr += fmt.Sprint("  ")
+		// log.Printf("  ")
 	}
-	fmt.Println(string(node.Value))
+	// log.Println(string(node.Value))
+	logStr += fmt.Sprint(string(node.Value))
+	log.Println(logStr)
+	// log.Println(string(node.Value))
 	if node.Left != nil {
 		// fmt.Print("l ")
 		node.Left.print(level + 1)
@@ -494,7 +501,7 @@ func (node *Node) insertNode(currentNode *Node, incomingNode *Node) (root *Node,
 }
 
 func checkForInvalidRune(char rune) {
-	if char == ' ' {
+	if unicode.IsSpace(char) {
 		return
 	}
 	if char >= 'A' && char <= 'Z' {
@@ -546,7 +553,7 @@ func arrangeOperations(operations string) (res *Node, length int) {
 			skip--
 			continue
 		}
-		if char == ' ' || char == '\r' {
+		if unicode.IsSpace(char) {
 			continue
 		}
 		// fmt.Printf("character %c starts at byte position %d\n", char, pos)
@@ -600,15 +607,21 @@ func arrangeOperations(operations string) (res *Node, length int) {
 
 func (parser *Parser) getFactResult(fact *Fact, l int) Value {
 	// fmt.Println("inferring value of", fact)
-	fact.printRulesUntilFact()
-	fmt.Println("value of", fact.Name, "was", fact.initialValue)
+	// fact.printRulesUntilFact()
+	fmt.Println("value of", fact.Name, "started", fact.initialValue)
 	visiteds := make(map[Noder][]FactResult)
 	for _, fact := range parser.graph.Facts {
 		if fact.initialValue == True {
+			fact.finalValue = True
 			res := FactResult{Value: True, Previous: nil}
 			visiteds[fact] = append(visiteds[fact], res)
 		}
 	}
+	// for key, results := range visiteds {
+	// 	if len(results) > 0 {
+	// 		fmt.Println(key.name(), "is initially", results[0])
+	// 	}
+	// }
 	requestingParents := make(map[Noder][]FactRequest)
 	originsStack := []*Fact{}
 	value := fact.apply(originsStack, nil, true, visiteds, requestingParents)
@@ -629,9 +642,9 @@ func (parser *Parser) requestUndeterminedInput() bool {
 			undeterminedFacts = append(undeterminedFacts, fact)
 		}
 	}
-	fmt.Println("Enter an undetermined fact name to set True or \"no\"")
+	fmt.Println("Enter an Undetermined fact name to set True or \"no\" to end there.")
 	reader := bufio.NewReader(os.Stdin)
-	data, err := reader.ReadString(0)
+	data, err := reader.ReadString('\n')
 	if err != nil {
 		if err.Error() == EOF_TYPE {
 			parser.parseContent([]byte(data))
@@ -639,6 +652,7 @@ func (parser *Parser) requestUndeterminedInput() bool {
 			panic(err)
 		}
 	}
+	data = strings.TrimSpace(data)
 	if data == "no" {
 		return false
 	}
@@ -657,7 +671,7 @@ func (parser *Parser) getQueriesResult(content string, l int) {
 	for _, elem := range operands {
 		operand := parser.graph.getOperand(rune(elem))
 		if operand != nil {
-			fmt.Printf("%s is %t\n", string(operand.Value), operand.Active)
+			// fmt.Printf("%s is %t\n", string(operand.Value), operand.Active)
 			if fact, ok := parser.graph.Facts[string(elem)]; ok {
 				result := parser.getFactResult(fact, l)
 				if parser.shouldRequestUndetermined {
@@ -668,24 +682,6 @@ func (parser *Parser) getQueriesResult(content string, l int) {
 						result = parser.getFactResult(fact, l)
 					}
 				}
-
-				// fmt.Println("inferring value of", fact)
-				// fact.printRulesUntilFact()
-				// fmt.Println("value of", fact.Name, "was", fact.initialValue)
-				// visiteds := make(map[Noder][]FactResult)
-				// for _, fact := range parser.graph.Facts {
-				// 	if fact.initialValue == True {
-				// 		res := FactResult{Value: True, Previous: nil}
-				// 		visiteds[fact] = append(visiteds[fact], res)
-				// 	}
-				// }
-				// requestingParents := make(map[Noder][]FactRequest)
-				// originsStack := []*Fact{}
-				// value := fact.apply(originsStack, nil, true, visiteds, requestingParents)
-				// if value == DeadEnd {
-				// 	value = fact.initialValue
-				// }
-				// fmt.Println("value of", fact.Name, "is now", value)
 			} else {
 				fmt.Println("no fact registered for", string(elem))
 			}
@@ -716,8 +712,8 @@ func (parser *Parser) parseContent(bytes []byte) {
 			if operator != nil {
 
 				indexOperator := strings.Index(elem, operator.Value)
-				operandsConditional := strings.Trim(elem[0:indexOperator], " ")
-				operandsAffected := strings.Trim(elem[(indexOperator+len(operator.Value)):len(elem)], " ")
+				operandsConditional := strings.TrimSpace(elem[0:indexOperator])
+				operandsAffected := strings.TrimSpace(elem[(indexOperator + len(operator.Value)):len(elem)])
 
 				parser.newOperation(operandsConditional, operandsAffected, operator, l)
 			} else if strings.Index(elem, INITIAL_FACTS) != -1 && strings.Index(elem, INITIAL_FACTS) == 0 {
@@ -731,6 +727,4 @@ func (parser *Parser) parseContent(bytes []byte) {
 		}
 		l++
 	}
-
-	// parser.graph.printConnections()
 }

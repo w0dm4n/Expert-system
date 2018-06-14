@@ -381,7 +381,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	// if visited already, return its value
 	if _, ok := visiteds[fact]; ok && !sameSide {
 		log.Println("looking for existing", fact.Name)
-		log.Println("------", fact.Name, "is", visiteds[fact])
+		log.Println("------", fact.Name, "is", bestValue(visiteds[fact]))
 		value := bestValue(visiteds[fact])
 		if value == True || value == False {
 			return value
@@ -426,7 +426,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 				// visiteds[origin] = append(visiteds[origin], res)
 
 				res = FactResult{Value: resValue, Previous: previous}
-				log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+				log.Println(fact.Name, "was", bestValue(visiteds[fact]), "and got", res.Value)
 				visiteds[fact] = append(visiteds[fact], res)
 				return resValue
 				// return False
@@ -447,7 +447,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	if len(fact.parentNodes) == 0 /* || (fact.initialValue == True && !sameSide)*/ {
 		log.Println("applying default value")
 		res := FactResult{Value: fact.initialValue, Previous: previous}
-		log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+		log.Println(fact.Name, "was", bestValue(visiteds[fact]), "and got", res.Value)
 		visiteds[fact] = append(visiteds[fact], res)
 		// log.Println(fact.Name, "is", visiteds[fact])
 		return bestValue(visiteds[fact])
@@ -476,7 +476,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 		originsStack = append(originsStack, fact)
 		res := FactResult{Value: v.apply(originsStack, fact, true, visiteds, requestingParents), Previous: previous}
 		_, originsStack = stackPop(originsStack)
-		log.Println(fact.Name, "was", visiteds[fact], "and got", res)
+		log.Println(fact.Name, "was", bestValue(visiteds[fact]), "and got", res.Value)
 		visiteds[fact] = append(visiteds[fact], res)
 		// }
 	}
@@ -509,7 +509,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	_ = gotUndefined
 	_ = gotDeadEnd
 
-	log.Println("======", fact.Name, "is", visiteds[fact])
+	log.Println("======", fact.Name, "is", bestValue(visiteds[fact]))
 	value := bestValue(visiteds[fact])
 	// if lastOrigin == nil && value == DeadEnd {
 	// 	// if !stackContains(originsStack, fact) && value == DeadEnd {

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 )
 
@@ -29,13 +30,36 @@ func main() {
 			}
 		}
 	}()
-	// log.SetFlags(0)
-	// log.SetOutput(ioutil.Discard)
 	var parser Parser
-	parser.shouldRequestUndetermined = true
 	parser.graph.Facts = make(map[string]*Fact)
 
 	parser.graph.build()
+
+	// check falgs
+	var verbose bool
+	var toDelete []int
+	for i, arg := range os.Args {
+		if arg == "-v" {
+			verbose = true
+			toDelete = append(toDelete, i)
+		} else if arg == "-u" {
+			parser.shouldRequestUndetermined = true
+			toDelete = append(toDelete, i)
+		}
+	}
+
+	// remove flags from args list
+	count := 0
+	for _, index := range toDelete {
+		index = index - count
+		os.Args = os.Args[:index+copy(os.Args[index:], os.Args[index+1:])]
+		count++
+	}
+	if verbose == false {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+	}
+
 	switch lenArgs := len(os.Args); lenArgs {
 	case 1:
 		fmt.Println("Please enter content and press CTRL-D")
@@ -43,6 +67,7 @@ func main() {
 		data, err := reader.ReadString(0)
 		if err != nil {
 			if err.Error() == EOF_TYPE {
+				fmt.Println()
 				parser.parseContent([]byte(data))
 			} else {
 				panic(err)
