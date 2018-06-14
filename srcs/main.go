@@ -32,6 +32,7 @@ func main() {
 	// log.SetFlags(0)
 	// log.SetOutput(ioutil.Discard)
 	var parser Parser
+	parser.shouldRequestUndetermined = true
 	parser.graph.Facts = make(map[string]*Fact)
 
 	parser.graph.build()

@@ -247,6 +247,8 @@ func TestComplex(t *testing.T) {
 	// runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.8", "value of J is now Undetermined") }) // takes too long
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.9", "value of L is now Undetermined") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.9.1", "value of L is now Undetermined") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.10.1", "value of D is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.11.1", "value of D is now Undetermined") })
 
 }
 
@@ -259,6 +261,13 @@ func TestOptimizer(t *testing.T) {
 
 func TestSpecial(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/testSequential", "opposite conditions on B") })
+}
+
+func TestBiconditional(t *testing.T) {
+	folder := "../tests/Biconditional/"
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBasic", "value of B is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBasic.1", "value of B is now Undetermined") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBasic.1.1", "value of C is now True") })
 }
 
 func TestCorrection(t *testing.T) {

@@ -308,6 +308,7 @@ func (rule *Rule) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 type Fact struct {
 	Name         string
 	initialValue Value
+	finalValue   Value
 	GraphNode
 }
 
@@ -542,6 +543,7 @@ func (fact *Fact) apply(originsStack []*Fact, previous Noder, sameSide bool, vis
 	if value == DeadEnd /*&& len(originsStack) == 0*/ {
 		value = False
 	}
+	fact.finalValue = value
 	return value
 }
 
@@ -597,26 +599,27 @@ func (graph *Graph) print() {
 	fmt.Printf("%+v", graph)
 }
 
+func (graph *Graph) integrateTree(rootNoder Noder, parentNoder Noder, parentTree *Node, childNoder Noder, childTree *Node) {
+	rootNoder.setParentNode(parentNoder)
+	parentNoder.setChildNode(rootNoder)
+	childNoder.setParentNode(rootNoder)
+	rootNoder.setChildNode(childNoder)
+	graph.integrateNode(parentTree, parentNoder, true)
+	graph.integrateNode(childTree, childNoder, false)
+}
+
 func (graph *Graph) integrate(lhsNode *Node, op *BaseOperator, rhsNode *Node) {
-	rootRule := &Rule{Type: op.Value}
+	rootRule := &Rule{Type: "=>"}
 	linked := graph.toNoder(lhsNode)
 	invertLinked := graph.toNoder(rhsNode)
-	// log.Println("linking")
-	if rootRule.Type == "=>" {
-		rootRule.setParentNode(linked)
-		linked.setChildNode(rootRule)
-		invertLinked.setParentNode(rootRule)
-		rootRule.setChildNode(invertLinked)
-		graph.integrateNode(lhsNode, linked, true)
-		graph.integrateNode(rhsNode, invertLinked, false)
+	if op.Value == "=>" {
+		graph.integrateTree(rootRule, linked, lhsNode, invertLinked, rhsNode)
 	}
-	if rootRule.Type == "<=>" {
-		rootRule.setParentNode(invertLinked)
-		invertLinked.setChildNode(rootRule)
-		linked.setParentNode(rootRule)
-		rootRule.setChildNode(linked)
-		graph.integrateNode(rhsNode, invertLinked, true)
-		graph.integrateNode(lhsNode, linked, false)
+	if op.Value == "<=>" {
+		graph.integrateTree(rootRule, linked, lhsNode, invertLinked, rhsNode)
+		linked = graph.toNoder(lhsNode)
+		invertLinked = graph.toNoder(rhsNode)
+		graph.integrateTree(rootRule, invertLinked, rhsNode, linked, lhsNode)
 	}
 }
 

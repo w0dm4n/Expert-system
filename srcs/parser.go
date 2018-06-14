@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -14,7 +16,8 @@ const (
 )
 
 type Parser struct {
-	graph Graph
+	graph                     Graph
+	shouldRequestUndetermined bool
 }
 
 type Node struct {
@@ -595,30 +598,94 @@ func arrangeOperations(operations string) (res *Node, length int) {
 	return
 }
 
-func (parser *Parser) getQueryResult(content string, l int) {
+func (parser *Parser) getFactResult(fact *Fact, l int) Value {
+	// fmt.Println("inferring value of", fact)
+	fact.printRulesUntilFact()
+	fmt.Println("value of", fact.Name, "was", fact.initialValue)
+	visiteds := make(map[Noder][]FactResult)
+	for _, fact := range parser.graph.Facts {
+		if fact.initialValue == True {
+			res := FactResult{Value: True, Previous: nil}
+			visiteds[fact] = append(visiteds[fact], res)
+		}
+	}
+	requestingParents := make(map[Noder][]FactRequest)
+	originsStack := []*Fact{}
+	value := fact.apply(originsStack, nil, true, visiteds, requestingParents)
+	if value == DeadEnd {
+		value = fact.initialValue
+	}
+	fmt.Println("value of", fact.Name, "is now", value)
+	return value
+}
+
+func (parser *Parser) requestUndeterminedInput() bool {
+	fmt.Println("Would you like to adjust the initial facts?")
+	fmt.Println("Available facts are:")
+	var undeterminedFacts []*Fact
+	for _, fact := range parser.graph.Facts {
+		fmt.Println(fact.Name, ":", fact.finalValue)
+		if fact.finalValue == Undetermined {
+			undeterminedFacts = append(undeterminedFacts, fact)
+		}
+	}
+	fmt.Println("Enter an undetermined fact name to set True or \"no\"")
+	reader := bufio.NewReader(os.Stdin)
+	data, err := reader.ReadString(0)
+	if err != nil {
+		if err.Error() == EOF_TYPE {
+			parser.parseContent([]byte(data))
+		} else {
+			panic(err)
+		}
+	}
+	if data == "no" {
+		return false
+	}
+	for _, fact := range undeterminedFacts {
+		if data == fact.Name {
+			fact.initialValue = True
+			return true
+		}
+	}
+	fmt.Println("Invalid undetermined fact name..")
+	return parser.requestUndeterminedInput()
+}
+
+func (parser *Parser) getQueriesResult(content string, l int) {
 	operands := []byte(strings.Trim(content, " "))
 	for _, elem := range operands {
 		operand := parser.graph.getOperand(rune(elem))
 		if operand != nil {
 			fmt.Printf("%s is %t\n", string(operand.Value), operand.Active)
 			if fact, ok := parser.graph.Facts[string(elem)]; ok {
-				// fmt.Println("inferring value of", fact)
-				fact.printRulesUntilFact()
-				fmt.Println("value of", fact.Name, "was", fact.initialValue)
-				visiteds := make(map[Noder][]FactResult)
-				for _, fact := range parser.graph.Facts {
-					if fact.initialValue == True {
-						res := FactResult{Value: True, Previous: nil}
-						visiteds[fact] = append(visiteds[fact], res)
+				result := parser.getFactResult(fact, l)
+				if parser.shouldRequestUndetermined {
+					for result == Undetermined {
+						if parser.requestUndeterminedInput() == false {
+							break
+						}
+						result = parser.getFactResult(fact, l)
 					}
 				}
-				requestingParents := make(map[Noder][]FactRequest)
-				originsStack := []*Fact{}
-				value := fact.apply(originsStack, nil, true, visiteds, requestingParents)
-				if value == DeadEnd {
-					value = fact.initialValue
-				}
-				fmt.Println("value of", fact.Name, "is now", value)
+
+				// fmt.Println("inferring value of", fact)
+				// fact.printRulesUntilFact()
+				// fmt.Println("value of", fact.Name, "was", fact.initialValue)
+				// visiteds := make(map[Noder][]FactResult)
+				// for _, fact := range parser.graph.Facts {
+				// 	if fact.initialValue == True {
+				// 		res := FactResult{Value: True, Previous: nil}
+				// 		visiteds[fact] = append(visiteds[fact], res)
+				// 	}
+				// }
+				// requestingParents := make(map[Noder][]FactRequest)
+				// originsStack := []*Fact{}
+				// value := fact.apply(originsStack, nil, true, visiteds, requestingParents)
+				// if value == DeadEnd {
+				// 	value = fact.initialValue
+				// }
+				// fmt.Println("value of", fact.Name, "is now", value)
 			} else {
 				fmt.Println("no fact registered for", string(elem))
 			}
@@ -657,7 +724,7 @@ func (parser *Parser) parseContent(bytes []byte) {
 				parser.activeOperands(elem[1:len(elem)], l)
 			} else if strings.Index(elem, INITIAL_QUERIES) == 0 {
 				// execute operations here
-				parser.getQueryResult(elem[1:len(elem)], l)
+				parser.getQueriesResult(elem[1:len(elem)], l)
 			} else {
 				panic(fmt.Sprintf("%s %d: %s", "Bad syntax on line", l, "No operator found"))
 			}
