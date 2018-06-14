@@ -156,26 +156,38 @@ func runTest(t *testing.T, test TestFunc) {
 }
 
 func TestBasics(t *testing.T) {
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testTrueToTrue", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testFalseToFalse", "value of K is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotFalseToNotFalse", "value of K is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotTrueToNotTrue", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testFalseToNotFalse", "value of K is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotTrueToTrue", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testErrorTrueToNotTrue", "opposite conditions on K") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotFalseToTrue", "value of K is now True") })
-
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotFalseToTrueChain", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotFalseToFalseChain", "value of K is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testErrorTrueToFalseChain", "opposite conditions on K") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testTrueToTrueChain", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotTrueToTrueChain", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testFalseToTrueChain", "value of K is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testNotTrueToFalseChain", "opposite conditions on K") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testFalseToFalseChain", "value of K is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testTrueToTrue", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testFalseToFalse", "value of K is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testNotFalseToNotFalse", "value of K is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testNotTrueToNotTrue", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testFalseToNotFalse", "value of K is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testNotTrueToTrue", "value of K is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testErrorTrueToNotTrue", "opposite conditions on K") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Basic/testNotFalseToTrue", "value of K is now True") })
 
 	runTest(t, func(t *testing.T) {
-		testFile(t, "../tests/testNotFalseToTrueChainOtherOpposite", "opposite conditions on B")
+		testFile(t, "../tests/BasicChain/testNotFalseToTrueChain", "value of K is now True")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/BasicChain/testNotFalseToFalseChain", "value of K is now False")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/BasicChain/testErrorTrueToFalseChain", "opposite conditions on K")
+	})
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/BasicChain/testTrueToTrueChain", "value of K is now True") })
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/BasicChain/testNotTrueToTrueChain", "value of K is now True")
+	})
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/BasicChain/testFalseToTrueChain", "value of K is now True") })
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/BasicChain/testNotTrueToFalseChain", "opposite conditions on K")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/BasicChain/testFalseToFalseChain", "value of K is now False")
+	})
+
+	runTest(t, func(t *testing.T) {
+		testFile(t, "../tests/BasicChain/testNotFalseToTrueChainOtherOpposite", "opposite conditions on B")
 	})
 }
 
@@ -222,17 +234,20 @@ func TestRightXor(t *testing.T) {
 }
 
 func TestComplex(t *testing.T) {
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.1", "value of E is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.2", "value of F is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.3", "value of G is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.4", "value of H is now False") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.5", "value of I is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6", "value of J is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6bis", "value of J is now Undetermined") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6.2", "opposite conditions on E") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.6.3", "value of J is now True") })
-	runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.7", "value of J is now Undetermined") })
-	// runTest(t, func(t *testing.T) { testFile(t, "../tests/testComplex.8", "value of J is now Undetermined") }) // takes too long
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.1", "value of E is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.2", "value of F is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.3", "value of G is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.4", "value of H is now False") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.5", "value of I is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.6", "value of J is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.6bis", "value of J is now Undetermined") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.6.2", "opposite conditions on E") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.6.3", "value of J is now True") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.7", "value of J is now Undetermined") })
+	// runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.8", "value of J is now Undetermined") }) // takes too long
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.9", "value of L is now Undetermined") })
+	runTest(t, func(t *testing.T) { testFile(t, "../tests/Complex/testComplex.9.1", "value of L is now Undetermined") })
+
 }
 
 func TestOptimizer(t *testing.T) {
@@ -296,4 +311,72 @@ func TestCorrection(t *testing.T) {
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/Correction/Xor.1.1", "value of A is now True") })
 	runTest(t, func(t *testing.T) { testFile(t, "../tests/Correction/Xor.2.1", "value of A is now False") })
 
+}
+
+func TestParsing(t *testing.T) {
+	folder := "../tests/Parsing/"
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBadOperator", "Unknown char: -") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testRightBadOperator", "Unknown char: -") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBadMiddle", "Bad syntax on line 1: No operator found") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBadMiddle.1", "Bad syntax on line 1: No operator found") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testBadMiddle.1.1", "Unknown char: =") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testRightNothing", "Rule right side is empty!") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testLeftNothing", "Rule left side is empty!") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testLeftNothing.1", "Rule left side is empty!") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testOperatorFirst", "issue with +") })
+	runTest(t, func(t *testing.T) { testFile(t, folder+"testMissingOperator", "Missing operator around A") })
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testMissingOperator.1", "! cannot be placed alone between operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testMissingOperator.1.1", "! cannot be placed alone between operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testMissingOperator.2.1", "! cannot be placed alone between operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testMissingOperand", "issue with +")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testMissingOperand.1", "+ operator requires two operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets", "missing operator between operands around A")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.1", "! cannot be placed alone between operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.1.1", "! cannot be placed alone between operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.2.1", "! cannot be placed alone between operands")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.3.1", "issue with +")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.4.1", "extra closing bracket")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.5.1", "extra closing bracket")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.6.1", "missing operator between operands around A")
+	})
+
+}
+
+func TestMainProgram(t *testing.T) {
+	redirector.startRedirect()
+
+	os.Args = []string{"testMain", "../tests/Correction/Xor..1"}
+	runTest(t, func(t *testing.T) { main() })
+
+	outStr := redirector.endRedirect()
+	t.Log(outStr)
+	expectedResult := "Le fichier spécifié est introuvable."
+	if !strings.Contains(outStr, expectedResult) {
+		t.Error("NOT", expectedResult)
+	}
 }

@@ -1,5 +1,0 @@
-K => !A
-!A => !B
-!B => !K # return impossible
-=K
-?K

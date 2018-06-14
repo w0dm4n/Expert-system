@@ -1,0 +1,3 @@
+K => !K # return impossible because we cannot change a True
+=K
+?K

@@ -1,5 +1,0 @@
-!K => !A
-!A => !B
-!B => !K # return false because k start false and becomes false by application of the rule
-=
-?K

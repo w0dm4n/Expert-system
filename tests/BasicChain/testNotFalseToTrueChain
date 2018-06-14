@@ -1,0 +1,5 @@
+!K => !A # never happens
+!A => !B
+!B => K # return true because k start false and becomes true by application of the rule
+=
+?K

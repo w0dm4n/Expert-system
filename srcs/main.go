@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -24,13 +23,14 @@ func main() {
 		recover := recover()
 		if recover != nil {
 			err := recover.(error)
+			fmt.Println(err)
 			if err != nil && typeOf(err) == ERROR_TYPE {
 				fmt.Println("An error occured while trying to load datas:", err.Error())
 			}
 		}
 	}()
-	log.SetFlags(0)
-	log.SetOutput(ioutil.Discard)
+	// log.SetFlags(0)
+	// log.SetOutput(ioutil.Discard)
 	var parser Parser
 	parser.graph.Facts = make(map[string]*Fact)
 

@@ -101,6 +101,9 @@ func (parser *Parser) getSymbol(content string) *BaseSymbol {
 }
 
 func (parser *Parser) getOperand(content string) *Operand {
+	if parser.trimOperand(content) == "" {
+		return nil
+	}
 	operandValue := []rune(parser.trimOperand(content))[0]
 	if operandValue >= 'A' && operandValue <= 'Z' {
 		operand := Operand{operandValue, true}
@@ -114,12 +117,15 @@ func (parser *Parser) getOperand(content string) *Operand {
 
 func (parser *Parser) getOperandConcerned(operands []Operand, content []string, i int) []Operand {
 	var concerned []Operand
+	if i >= len(operands) {
+		return concerned
+	}
 	concerned = append(concerned, operands[i-1])
 	concerned = append(concerned, operands[i])
 	return concerned
 }
 
-func (parser *Parser) newOperation(conditional, affected string, operator *BaseOperator) {
+func (parser *Parser) newOperation(conditional, affected string, operator *BaseOperator, l int) {
 
 	conditionalContent := strings.Split(conditional, " ")
 	var operands []Operand
@@ -136,19 +142,33 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	}
 
 	symbolCount := 0
+	bracketStartCount := 0
+	bracketEndCount := 0
 	for _, elem := range conditionalContent {
 		if strings.Contains(elem, PARENTHESIS_START) {
 			inParenthesis = true
+			bracketStartCount += strings.Count(elem, PARENTHESIS_START)
 		}
 		symbolBase := parser.getSymbol(elem)
 		if symbolBase != nil {
 			symbolCount++ // until next symbol
 			symbol := Symbol{symbolBase.Value, parser.getOperandConcerned(operands, conditionalContent, symbolCount), inParenthesis}
+			if len(symbol.OperandsAffected) == 0 {
+				panic(fmt.Sprintf("issue with %s", symbol.Value))
+			}
 			symbols = append(symbols, symbol)
 		}
 		if strings.Contains(elem, PARENTHESIS_END) {
 			inParenthesis = false
+			bracketEndCount += strings.Count(elem, PARENTHESIS_END)
+			if bracketEndCount > bracketStartCount {
+				panic(fmt.Sprint("extra closing bracket"))
+			}
 		}
+	}
+
+	if bracketStartCount > bracketEndCount {
+		panic(fmt.Sprint("extra opening bracket"))
 	}
 
 	// C | !X + (B + X | (F | !X))
@@ -174,16 +194,28 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	_ = Rule
 
 	lhsRawNodes, _ := arrangeOperations(conditional)
+	if lhsRawNodes == nil {
+		panic(fmt.Sprint("Rule left side is empty!"))
+	}
 	rhsRawNodes, _ := arrangeOperations(affected)
+	if rhsRawNodes == nil {
+		panic(fmt.Sprint("Rule right side is empty!"))
+	}
 
 	fmt.Println("actual tree")
 	rhsRawNodes.print(1)
 	fmt.Println(operator.Value)
 	lhsRawNodes.print(1)
 
-	lhsRawNodes = optimiseTree(lhsRawNodes)
+	rhsRawNodes.check()
+	lhsRawNodes.check()
+
+	// first pass to convert all Xors
 	lhsRawNodes = optimiseTree(lhsRawNodes)
 	rhsRawNodes = optimiseTree(rhsRawNodes)
+
+	// second pass to convert transpiled Xors
+	lhsRawNodes = optimiseTree(lhsRawNodes)
 	rhsRawNodes = optimiseTree(rhsRawNodes)
 
 	fmt.Println("final optimized")
@@ -194,6 +226,35 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 	// conversion of binary tree nodes into graph nodes
 	// the graph has to know on which side it is from the operator
 	parser.graph.integrate(lhsRawNodes, operator, rhsRawNodes)
+}
+
+func (node *Node) check() {
+	if node == nil {
+		return
+	}
+	if node.Parent != nil && isFact(node.Parent.Value) {
+		panic(fmt.Sprintf("missing operator between operands around %s", string(node.Parent.Value)))
+	}
+	if node.Value == '!' {
+		if node.Right != nil {
+			panic(fmt.Sprintf("! cannot be placed as logical operator between two operands"))
+		}
+	} else if isTwoSidedLogicalOperator(node.Value) {
+		if node.Left == nil || node.Right == nil {
+			panic(fmt.Sprintf("%s operator requires two operands", string(node.Value)))
+		}
+	} else if isFact(node.Value) {
+		if isFactBeforeOpAbove(node.Parent) {
+			panic(fmt.Sprintf("missing operator between operands around %s", string(node.Value)))
+		}
+	}
+
+	if node.Left != nil {
+		node.Left.check()
+	}
+	if node.Right != nil {
+		node.Right.check()
+	}
 }
 
 func optimiseTree(node *Node) (root *Node) {
@@ -325,12 +386,12 @@ func (node *Node) print(level int) {
 }
 
 var prios = map[rune]int{
-	'(': 1,
-	')': 2,
-	'!': 3,
-	([]rune(SYMBOL_AND))[0]: 4,
-	([]rune(SYMBOL_OR))[0]:  5,
-	([]rune(SYMBOL_XOR))[0]: 6,
+	([]rune(PARENTHESIS_START))[0]: 1,
+	([]rune(PARENTHESIS_END))[0]:   2,
+	([]rune(NEGATIVE_OPERATOR))[0]: 3,
+	([]rune(SYMBOL_AND))[0]:        4,
+	([]rune(SYMBOL_OR))[0]:         5,
+	([]rune(SYMBOL_XOR))[0]:        6,
 }
 
 func (node *Node) insert(currentNode *Node, value rune) (root *Node, inserted *Node) {
@@ -345,17 +406,14 @@ func (node *Node) insert(currentNode *Node, value rune) (root *Node, inserted *N
 
 	root = node
 	if prios[value] < prios[currentNode.Value] {
-		if currentNode.Left == nil {
-			currentNode.Left = &Node{Value: value, Parent: currentNode}
-			inserted = currentNode.Left
-		} else if currentNode.Right == nil {
-			currentNode.Right = &Node{Value: value, Parent: currentNode}
-			inserted = currentNode.Right
-		} else {
+		if currentNode.Left != nil && currentNode.Right != nil {
 			intermediateNode := &Node{Value: value, Parent: currentNode, Left: currentNode.Right}
 			currentNode.Right.Parent = intermediateNode
 			currentNode.Right = intermediateNode
 			inserted = intermediateNode
+		} else {
+			newNode := &Node{Value: value, Parent: currentNode}
+			_, inserted = node.insertNode(currentNode, newNode)
 		}
 	} else {
 		if currentNode.Parent != nil {
@@ -365,6 +423,10 @@ func (node *Node) insert(currentNode *Node, value rune) (root *Node, inserted *N
 			inserted = currentNode.Parent
 			root = inserted
 		}
+	}
+
+	if isFact(value) && isFactBeforeOpAbove(currentNode.Parent) {
+		panic(fmt.Sprintf("Missing operator around %s", string(value)))
 	}
 
 	return
@@ -377,12 +439,55 @@ func (node *Node) insertNode(currentNode *Node, incomingNode *Node) (root *Node,
 		incomingNode.Parent = currentNode
 		inserted = currentNode.Left
 	} else if currentNode.Right == nil {
+		if currentNode.Value == '!' {
+			panic(fmt.Sprintf("! cannot be placed alone between operands"))
+		}
 		currentNode.Right = incomingNode
 		incomingNode.Parent = currentNode
 		inserted = currentNode.Right
 	}
 
 	return
+}
+
+func checkForInvalidRune(char rune) {
+	if char == ' ' {
+		return
+	}
+	if char >= 'A' && char <= 'Z' {
+		return
+	}
+	if _, ok := prios[char]; ok {
+		return
+	}
+	panic(fmt.Sprintf("%s: %s", "Unknown char", string(char)))
+}
+
+func isFactBeforeOpAbove(parent *Node) bool {
+	if parent == nil {
+		return false
+	}
+	if parent.Value == '!' {
+		return isFactBeforeOpAbove(parent.Parent)
+	}
+	if parent.Value >= 'A' && parent.Value <= 'Z' {
+		return true
+	}
+	return false
+}
+
+func isFact(char rune) bool {
+	if char >= 'A' && char <= 'Z' {
+		return true
+	}
+	return false
+}
+
+func isTwoSidedLogicalOperator(char rune) bool {
+	if char == '+' || char == '|' || char == '^' {
+		return true
+	}
+	return false
 }
 
 func arrangeOperations(operations string) (res *Node, length int) {
@@ -393,7 +498,7 @@ func arrangeOperations(operations string) (res *Node, length int) {
 
 	// fmt.Println("arranging", operations)
 	for pos, char := range []rune(operations) {
-		// prev := root
+		checkForInvalidRune(char)
 		if skip > 0 {
 			skip--
 			continue
@@ -507,7 +612,7 @@ func (parser *Parser) parseContent(bytes []byte) {
 				operandsConditional := strings.Trim(elem[0:indexOperator], " ")
 				operandsAffected := strings.Trim(elem[(indexOperator+len(operator.Value)):len(elem)], " ")
 
-				parser.newOperation(operandsConditional, operandsAffected, operator)
+				parser.newOperation(operandsConditional, operandsAffected, operator, l)
 			} else if strings.Index(elem, INITIAL_FACTS) != -1 && strings.Index(elem, INITIAL_FACTS) == 0 {
 				parser.activeOperands(elem[1:len(elem)], l)
 			} else if strings.Index(elem, INITIAL_QUERIES) == 0 {
