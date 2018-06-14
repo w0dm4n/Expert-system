@@ -125,6 +125,24 @@ func (parser *Parser) getOperandConcerned(operands []Operand, content []string, 
 	return concerned
 }
 
+func checkBrackets(equation string) {
+	bracketStartCount := 0
+	bracketEndCount := 0
+	for _, char := range []rune(equation) {
+		if string(char) == PARENTHESIS_START {
+			bracketStartCount++
+		} else if string(char) == PARENTHESIS_END {
+			bracketEndCount++
+			if bracketEndCount > bracketStartCount {
+				panic(fmt.Sprint("extra closing bracket"))
+			}
+		}
+	}
+	if bracketStartCount > bracketEndCount {
+		panic(fmt.Sprint("extra opening bracket"))
+	}
+}
+
 func (parser *Parser) newOperation(conditional, affected string, operator *BaseOperator, l int) {
 
 	conditionalContent := strings.Split(conditional, " ")
@@ -140,6 +158,9 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 			operands = append(operands, *operand)
 		}
 	}
+
+	// check left side brackets
+	checkBrackets(conditional)
 
 	symbolCount := 0
 	bracketStartCount := 0
@@ -161,6 +182,25 @@ func (parser *Parser) newOperation(conditional, affected string, operator *BaseO
 		if strings.Contains(elem, PARENTHESIS_END) {
 			inParenthesis = false
 			bracketEndCount += strings.Count(elem, PARENTHESIS_END)
+			if bracketEndCount > bracketStartCount {
+				panic(fmt.Sprint("extra closing bracket"))
+			}
+		}
+	}
+
+	if bracketStartCount > bracketEndCount {
+		panic(fmt.Sprint("extra opening bracket"))
+	}
+
+	// check right side brackets
+	checkBrackets(affected)
+	bracketStartCount = 0
+	bracketEndCount = 0
+	for _, char := range []rune(affected) {
+		if string(char) == PARENTHESIS_START {
+			bracketStartCount++
+		} else if string(char) == PARENTHESIS_END {
+			bracketEndCount++
 			if bracketEndCount > bracketStartCount {
 				panic(fmt.Sprint("extra closing bracket"))
 			}

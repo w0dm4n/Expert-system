@@ -353,7 +353,7 @@ func TestParsing(t *testing.T) {
 		testFile(t, folder+"testBadBrackets.2.1", "! cannot be placed alone between operands")
 	})
 	runTest(t, func(t *testing.T) {
-		testFile(t, folder+"testBadBrackets.3.1", "issue with +")
+		testFile(t, folder+"testBadBrackets.3.1", "extra opening bracket")
 	})
 	runTest(t, func(t *testing.T) {
 		testFile(t, folder+"testBadBrackets.4.1", "extra closing bracket")
@@ -366,6 +366,12 @@ func TestParsing(t *testing.T) {
 	})
 	runTest(t, func(t *testing.T) {
 		testFile(t, folder+"testBadBrackets.7.1", "issue with +")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.8.1", "extra closing bracket")
+	})
+	runTest(t, func(t *testing.T) {
+		testFile(t, folder+"testBadBrackets.9.1", "extra opening bracket")
 	})
 
 }
